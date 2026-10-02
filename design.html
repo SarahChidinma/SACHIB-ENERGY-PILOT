@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SACHIB Energy — Design System & Visual Tokens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Brand Color Palette */
+      --color-bg-primary: #070B12;
+      --color-bg-surface: #0E1626;
+      --color-bg-surface-elevated: #162238;
+      --color-bg-glass: rgba(14, 22, 38, 0.75);
+      
+      --color-border-subtle: rgba(255, 255, 255, 0.08);
+      --color-border-accent: rgba(245, 158, 11, 0.35);
+      
+      --color-solar-gold: #F59E0B;
+      --color-solar-gold-glow: rgba(245, 158, 11, 0.25);
+      --color-energy-emerald: #10B981;
+      --color-energy-emerald-glow: rgba(16, 185, 129, 0.2);
+      --color-grid-blue: #3B82F6;
+      --color-battery-cyan: #06B6D4;
+      --color-alert-crimson: #EF4444;
+      --color-generator-orange: #F97316;
+      
+      --color-text-primary: #F8FAFC;
+      --color-text-secondary: #94A3B8;
+      --color-text-muted: #64748B;
+      
+      /* Typography */
+      --font-heading: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      /* Radii */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+      
+      /* Elevation */
+      --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+      --shadow-glow-solar: 0 0 25px rgba(245, 158, 11, 0.3);
+      --shadow-glow-emerald: 0 0 25px rgba(16, 185, 129, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--color-bg-primary);
+      color: var(--color-text-primary);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 3.5rem;
+      border-bottom: 1px solid var(--color-border-subtle);
+      padding-bottom: 2rem;
+    }
+
+    .brand-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--color-solar-gold);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-heading);
+      font-size: 2.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .motto {
+      font-style: italic;
+      color: var(--color-solar-gold);
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin: 2.5rem 0 1.25rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 1.4rem;
+      background: var(--color-solar-gold);
+      border-radius: var(--radius-full);
+    }
+
+    /* Color Swatches Grid */
+    .token-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .swatch-card {
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .swatch-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--color-border-accent);
+    }
+
+    .swatch-preview {
+      height: 110px;
+      display: flex;
+      align-items: flex-end;
+      padding: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .swatch-info {
+      padding: 1.25rem;
+    }
+
+    .swatch-name {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .swatch-role {
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+    }
+
+    /* Typography Showcase */
+    .type-specimen {
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .type-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    /* UI Components Preview */
+    .components-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .component-box {
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-solar {
+      background: rgba(245, 158, 11, 0.15);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .badge-battery {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .badge-grid {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60A5FA;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+
+    .badge-alert {
+      background: rgba(239, 68, 68, 0.15);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .advisory-preview {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(14, 22, 38, 0.95));
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+
+    .advisory-preview::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--color-solar-gold);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, var(--color-solar-gold), #D97706);
+      color: #070B12;
+      font-weight: 700;
+      font-family: var(--font-heading);
+      padding: 0.65rem 1.4rem;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      box-shadow: var(--shadow-glow-solar);
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 35px rgba(245, 158, 11, 0.5);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .link-prototype {
+      color: var(--color-solar-gold);
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .link-prototype:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="brand-eyebrow">SACHIB Signatures • Design System</span>
+      <h1>SACHIB Energy Visual Tokens</h1>
+      <p class="motto">“Light in every dwelling.” — Exodus 10:23</p>
+      <p style="color: var(--color-text-secondary); max-width: 750px;">
+        Curated design tokens, accessible high-contrast palette, and typography standards established for the SACHIB Church Energy AI monitoring interface.
+      </p>
+      <div class="nav-links">
+        <a href="index.html" class="link-prototype">
+          <span>🚀 Launch Local Working Prototype (index.html)</span> &rarr;
+        </a>
+      </div>
+    </header>
+
+    <!-- Colors -->
+    <h2 class="section-title">Color Palette & Energy Hierarchy</h2>
+    <div class="token-grid">
+      <div class="swatch-card">
+        <div class="swatch-preview" style="background: #F59E0B; color: #070B12;">#F59E0B</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Solar Gold</div>
+          <div class="swatch-role">Primary accent, PV generation, actionable recommendations</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-preview" style="background: #10B981; color: #070B12;">#10B981</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Clean Energy Emerald</div>
+          <div class="swatch-role">Battery optimal state, diesel displacement, financial savings</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-preview" style="background: #3B82F6; color: #FFFFFF;">#3B82F6</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Grid Blue</div>
+          <div class="swatch-role">External utility grid connectivity & smart meter telemetry</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-preview" style="background: #F97316; color: #070B12;">#F97316</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Generator Amber</div>
+          <div class="swatch-role">Backup diesel/petrol generator runtime warning & cost metric</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-preview" style="background: #EF4444; color: #FFFFFF;">#EF4444</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Critical Red</div>
+          <div class="swatch-role">Inverter fault, deep battery discharge risk & urgent load shedding</div>
+        </div>
+      </div>
+      <div class="swatch-card">
+        <div class="swatch-preview" style="background: #0E1626; color: #F8FAFC; border-top: 1px solid rgba(255,255,255,0.1);">#0E1626</div>
+        <div class="swatch-info">
+          <div class="swatch-name">Deep Sanctuary Navy</div>
+          <div class="swatch-role">Surface card background, dark-mode high contrast substrate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <h2 class="section-title">Typography System</h2>
+    <div class="type-specimen">
+      <div class="type-label">Heading Font • Outfit (SemiBold / ExtraBold)</div>
+      <div style="font-family: var(--font-heading); font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">
+        Intelligent Solar Energy Management
+      </div>
+      <div style="color: var(--color-text-secondary); font-size: 0.95rem;">
+        Used for primary titles, facility name headers, and high-impact energy metric values.
+      </div>
+    </div>
+    
+    <div class="type-specimen">
+      <div class="type-label">Body Font • Inter (Regular / Medium)</div>
+      <div style="font-family: var(--font-body); font-size: 1.05rem; margin-bottom: 0.5rem;">
+        “Based on current auditorium consumption and tomorrow’s cloud forecast, reduce non-essential air-conditioning tonight to guarantee 100% service uptime.”
+      </div>
+      <div style="color: var(--color-text-secondary); font-size: 0.95rem;">
+        Optimized for readability in long-form advisories, audit descriptions, and diagnostic logs.
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <div class="type-label">Data & Telemetry Font • JetBrains Mono</div>
+      <div style="font-family: var(--font-mono); font-size: 1.2rem; color: var(--color-solar-gold); margin-bottom: 0.5rem;">
+        PV_OUTPUT: 8.42 kW | BATT_SOC: 78.4% | FREQ: 50.02 Hz
+      </div>
+      <div style="color: var(--color-text-secondary); font-size: 0.95rem;">
+        Used for telemetry readouts, inverter register parameters, and calculation metrics.
+      </div>
+    </div>
+
+    <!-- UI Components Preview -->
+    <h2 class="section-title">Component Specimens</h2>
+    <div class="components-grid">
+      <div class="component-box">
+        <div class="type-label">Live Status Chips</div>
+        <div class="badge-row">
+          <span class="badge badge-solar">● Solar Active (8.4 kW)</span>
+          <span class="badge badge-battery">● Battery 78% SoC</span>
+          <span class="badge badge-grid">● Grid Standby</span>
+          <span class="badge badge-alert">● Generator Offline</span>
+        </div>
+      </div>
+
+      <div class="component-box">
+        <div class="type-label">Interactive Button & Actions</div>
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="btn">⚡ Shed Non-Essential Loads</button>
+        </div>
+      </div>
+
+      <div class="component-box" style="grid-column: 1 / -1;">
+        <div class="type-label">Prescriptive AI Advisory Banner (Core Differentiator)</div>
+        <div class="advisory-preview">
+          <strong style="color: var(--color-solar-gold); font-size: 1.05rem; display: block; margin-bottom: 0.35rem;">
+            🤖 SACHIB AI Predictive Notice: High Depletion Risk Ahead
+          </strong>
+          <p style="font-size: 0.95rem; color: var(--color-text-secondary);">
+            Sanctuary chillers are currently drawing 4.8 kW. Tomorrow’s weather forecast indicates 85% cloud coverage between 10:00 AM and 2:00 PM. We recommend enabling <em>Eco-Cooling Mode</em> tonight to preserve 12.4 kWh for tomorrow's Midweek Service.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

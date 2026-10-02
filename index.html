@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SACHIB Energy — Intelligent Church Energy Dashboard</title>
+  <meta name="description" content="AI-powered solar energy intelligence and remote monitoring platform for churches, institutions, and member businesses. Monitor, predict, and optimize your energy.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #060A10;
+      --bg-surface: #0C1322;
+      --bg-surface-elevated: #131E35;
+      --bg-glass: rgba(12, 19, 34, 0.85);
+
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(245, 158, 11, 0.4);
+
+      --solar-gold: #F59E0B;
+      --solar-glow: rgba(245, 158, 11, 0.3);
+      --energy-emerald: #10B981;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+      --grid-blue: #3B82F6;
+      --battery-cyan: #06B6D4;
+      --generator-amber: #F97316;
+      --alert-crimson: #EF4444;
+
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+
+      --font-title: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+
+      --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Ambient Background Glow */
+    .ambient-glow {
+      position: fixed;
+      top: -100px;
+      right: 15%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, rgba(6, 10, 16, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .ambient-glow-left {
+      position: fixed;
+      bottom: -150px;
+      left: 10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(6, 10, 16, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .layout-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    /* Header Nav */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 1.25rem 1.75rem;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-logo-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--solar-gold), #B45309);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: 0 0 20px var(--solar-glow);
+    }
+
+    .brand-name {
+      font-family: var(--font-title);
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .brand-tagline {
+      font-size: 0.8rem;
+      color: var(--solar-gold);
+      font-style: italic;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .select-facility, .select-mode {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .select-facility:focus, .select-mode:focus {
+      border-color: var(--solar-gold);
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.9rem;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34D399;
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--energy-emerald);
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* System Clock Bar */
+    .system-clock-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 0.65rem 1.25rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .clock-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .clock-item .live-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--energy-emerald);
+      animation: pulse 1.8s infinite;
+    }
+
+    .clock-value {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    /* Live Power Flow Hero */
+    .flow-hero {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--solar-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.25rem;
+    }
+
+    .section-heading {
+      font-family: var(--font-title);
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Power Flow Connector Lines */
+    .flow-connector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 0;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .flow-line {
+      height: 2px;
+      flex: 1;
+      max-width: 80px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 1px;
+    }
+
+    .flow-line::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      animation: flowPulse 1.5s ease-in-out infinite;
+    }
+
+    .flow-line.solar-flow { background: rgba(245, 158, 11, 0.2); }
+    .flow-line.solar-flow::after { background: linear-gradient(90deg, transparent, var(--solar-gold), transparent); }
+
+    .flow-line.battery-flow { background: rgba(16, 185, 129, 0.2); }
+    .flow-line.battery-flow::after { background: linear-gradient(90deg, transparent, var(--energy-emerald), transparent); }
+
+    .flow-line.grid-flow { background: rgba(59, 130, 246, 0.2); }
+    .flow-line.grid-flow::after { background: linear-gradient(90deg, transparent, var(--grid-blue), transparent); }
+
+    .flow-line.gen-flow { background: rgba(249, 115, 22, 0.15); }
+    .flow-line.gen-flow::after { background: linear-gradient(90deg, transparent, var(--generator-amber), transparent); }
+
+    .flow-line.inactive { opacity: 0.2; }
+    .flow-line.inactive::after { animation: none; }
+
+    @keyframes flowPulse {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    .power-grid-nodes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      position: relative;
+    }
+
+    .node-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .node-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .node-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-3px);
+    }
+
+    .node-card:hover::before {
+      opacity: 1;
+    }
+
+    .node-card.solar-node::before { background: linear-gradient(90deg, var(--solar-gold), #D97706); }
+    .node-card.battery-node::before { background: linear-gradient(90deg, var(--energy-emerald), #059669); }
+    .node-card.load-node::before { background: linear-gradient(90deg, var(--grid-blue), #2563EB); }
+    .node-card.gen-node::before { background: linear-gradient(90deg, var(--generator-amber), #EA580C); }
+
+    .node-card.active-node::before { opacity: 1; }
+
+    .node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .node-icon {
+      font-size: 1.5rem;
+    }
+
+    .node-status {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .status-active {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34D399;
+    }
+
+    .status-standby {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60A5FA;
+    }
+
+    .status-off {
+      background: rgba(148, 163, 184, 0.15);
+      color: #94A3B8;
+    }
+
+    .status-warning {
+      background: rgba(239, 68, 68, 0.2);
+      color: #F87171;
+    }
+
+    .status-charging {
+      background: rgba(6, 182, 212, 0.2);
+      color: #22D3EE;
+    }
+
+    .node-value {
+      font-family: var(--font-mono);
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+      transition: all 0.3s ease;
+    }
+
+    .node-unit {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .node-subtext {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    /* Battery Health Mini-Stats */
+    .node-diagnostics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .diag-item {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    .diag-item span {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Power Flow Direction Indicators */
+    .flow-direction-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      padding: 1rem 0;
+      margin-top: 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .flow-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.3s;
+    }
+
+    .flow-indicator.active-flow {
+      border-color: rgba(245, 158, 11, 0.3);
+      color: var(--text-muted);
+    }
+
+    .flow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .flow-dot.solar { background: var(--solar-gold); box-shadow: 0 0 8px var(--solar-glow); }
+    .flow-dot.battery { background: var(--energy-emerald); box-shadow: 0 0 8px var(--emerald-glow); }
+    .flow-dot.grid { background: var(--grid-blue); }
+    .flow-dot.gen { background: var(--generator-amber); }
+    .flow-dot.inactive { background: var(--text-dim); box-shadow: none; opacity: 0.4; }
+
+    /* Core Prescriptive Advisory Banner */
+    .advisory-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(14, 22, 38, 0.95) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      box-shadow: 0 10px 30px rgba(245, 158, 11, 0.12);
+      position: relative;
+      transition: all 0.4s ease;
+    }
+
+    .advisory-card.advisory-critical {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.14) 0%, rgba(14, 22, 38, 0.95) 100%);
+      border-color: rgba(239, 68, 68, 0.4);
+      box-shadow: 0 10px 30px rgba(239, 68, 68, 0.12);
+    }
+
+    .advisory-card.advisory-optimal {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(14, 22, 38, 0.95) 100%);
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.12);
+    }
+
+    .advisory-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: var(--solar-gold);
+      transition: all 0.3s;
+    }
+
+    .advisory-content {
+      flex: 1;
+    }
+
+    .advisory-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: var(--solar-gold);
+      color: #070B12;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      transition: background 0.3s;
+    }
+
+    .advisory-title {
+      font-family: var(--font-title);
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .advisory-text {
+      color: #CBD5E1;
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+      line-height: 1.6;
+    }
+
+    .advisory-actions {
+      display: flex;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-title);
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, var(--solar-gold), #D97706);
+      color: #060A10;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-gold:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-emerald {
+      background: linear-gradient(135deg, var(--energy-emerald), #059669);
+      color: #060A10;
+      box-shadow: 0 0 15px var(--emerald-glow);
+    }
+
+    .btn-emerald:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.5);
+    }
+
+    /* Sub-panels Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 992px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-soft);
+    }
+
+    /* Service Mode Preset Cards */
+    .mode-presets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .mode-card {
+      padding: 0.85rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .mode-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+    }
+
+    .mode-card.mode-active {
+      border-color: var(--solar-gold);
+      background: rgba(245, 158, 11, 0.08);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+    }
+
+    .mode-card.mode-active::after {
+      content: '✓';
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      font-size: 0.7rem;
+      color: var(--solar-gold);
+      font-weight: 700;
+    }
+
+    .mode-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .mode-label {
+      font-family: var(--font-title);
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 0.15rem;
+    }
+
+    .mode-desc {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    /* Load Shedding Checklist */
+    .load-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin-top: 1rem;
+    }
+
+    .load-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      transition: all 0.2s;
+    }
+
+    .load-item.shedded {
+      opacity: 0.45;
+      text-decoration: line-through;
+    }
+
+    .load-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .load-toggle {
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--solar-gold);
+    }
+
+    /* Telemetry Sliders / Simulation Tool */
+    .sim-controls {
+      background: var(--bg-surface-elevated);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    .sim-slider-row {
+      margin-bottom: 1.2rem;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .slider-input {
+      width: 100%;
+      accent-color: var(--solar-gold);
+      cursor: pointer;
+    }
+
+    /* Generator Savings Panel */
+    .savings-stat {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+
+    .savings-num {
+      font-family: var(--font-title);
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--energy-emerald);
+      line-height: 1;
+    }
+
+    .savings-currency {
+      color: var(--solar-gold);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    /* Depletion Timeline */
+    .depletion-timeline {
+      background: var(--bg-surface-elevated);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      margin-top: 1rem;
+      border-left: 3px solid var(--battery-cyan);
+    }
+
+    .depletion-label {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.35rem;
+    }
+
+    .depletion-time {
+      font-family: var(--font-mono);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--battery-cyan);
+    }
+
+    .depletion-detail {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2.5rem 0 1rem;
+      border-top: 1px solid var(--border-subtle);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--solar-gold);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .system-clock-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .header-controls {
+        width: 100%;
+      }
+      .select-facility, .select-mode {
+        width: 100%;
+      }
+      .mode-presets-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .advisory-card {
+        flex-direction: column;
+      }
+      .flow-direction-bar {
+        gap: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-glow"></div>
+  <div class="ambient-glow-left"></div>
+
+  <div class="layout-wrapper">
+    <!-- Top Navigation Header -->
+    <header>
+      <div class="brand-group">
+        <div class="brand-logo-icon">☀️</div>
+        <div>
+          <div class="brand-name">SACHIB ENERGY</div>
+          <div class="brand-tagline">"Light in every dwelling." — Exodus 10:23</div>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <select id="facilitySelect" class="select-facility" aria-label="Select Church Facility">
+          <option value="cathedral">Grace Cathedral Main Sanctuary</option>
+          <option value="clinic">St. Luke's Church Clinic</option>
+          <option value="academy">Faith Academy School Campus</option>
+          <option value="member_biz">Member Enterprise: Grace Bakery & Cold Store</option>
+        </select>
+
+        <select id="serviceModeSelect" class="select-mode" aria-label="Select Service Mode">
+          <option value="normal">Normal Operations</option>
+          <option value="sunday">Sunday Service Mode</option>
+          <option value="vigil">Night Vigil Mode</option>
+          <option value="midweek">Midweek Fellowship</option>
+          <option value="admin">Weekday Admin / Office</option>
+        </select>
+
+        <div class="role-badge">
+          <div class="pulse-dot"></div>
+          <span id="roleText">ADMIN: FACILITY DIRECTOR</span>
+        </div>
+
+        <a href="design.html" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.8rem;">
+          🎨 Design Tokens
+        </a>
+      </div>
+    </header>
+
+    <!-- System Clock & Telemetry Status Bar -->
+    <div class="system-clock-bar" id="systemClockBar">
+      <div class="clock-item">
+        <div class="live-indicator"></div>
+        <span>LIVE TELEMETRY</span>
+        <span class="clock-value" id="systemClock">--:--:--</span>
+      </div>
+      <div class="clock-item">
+        <span>SOLAR TIME:</span>
+        <span class="clock-value" id="solarTimeLabel">Daytime — Peak Generation Window</span>
+      </div>
+      <div class="clock-item">
+        <span>MODE:</span>
+        <span class="clock-value" id="activeModeLabel">NORMAL OPS</span>
+      </div>
+      <div class="clock-item">
+        <span>HEARTBEAT:</span>
+        <span class="clock-value" id="heartbeatCounter">0</span>
+      </div>
+    </div>
+
+    <!-- Core AI Prescriptive Advisory Card (PRD Section 7.2) -->
+    <section class="advisory-card" id="advisoryBanner" aria-live="polite">
+      <div class="advisory-icon-wrapper" id="advisoryIconWrapper">
+        <span>🤖</span>
+      </div>
+      <div class="advisory-content">
+        <div class="advisory-badge" id="advisoryBadge">AI Prescriptive Advisory • High Priority</div>
+        <div class="advisory-title" id="advisoryHeading">Anticipated Evening Deficit Warning</div>
+        <div class="advisory-text" id="advisoryMessage">
+          Current facility load is <strong id="advCurrentLoad">7.2 kW</strong> with battery at <strong id="advBatterySoC">78%</strong>. Based on forecasted cloud cover tomorrow afternoon, continuing this load will deplete the battery reserves before <strong>4:15 AM</strong>. We advise shedding non-essential lighting and auxiliary cooling now to preserve power for the Wednesday Evening Service.
+        </div>
+        <div class="advisory-actions">
+          <button class="btn btn-gold" id="btnShedLoads" onclick="toggleEcoMode()">
+            ⚡ Apply Eco-Shedding (Save 3.1 kW)
+          </button>
+          <button class="btn btn-secondary" id="btnSimulateCloud" onclick="simulateCloudEvent()">
+            ⛅ Simulate Heavy Overcast
+          </button>
+          <button class="btn btn-secondary" onclick="exportEnergyAudit()">
+            📥 Export Energy Audit (CSV)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Power Flow Topology Hero -->
+    <section class="flow-hero">
+      <div class="section-eyebrow">Real-Time Energy Topology</div>
+      <div class="section-heading">Active Energy Sources & Facility Distribution</div>
+
+      <div class="power-grid-nodes">
+        <!-- Node 1: Solar Array -->
+        <div class="node-card solar-node active-node" id="solarNodeCard">
+          <div class="node-header">
+            <span class="node-icon">☀️</span>
+            <span class="node-status status-active" id="solarStatus">Generating</span>
+          </div>
+          <div>
+            <div class="node-value" style="color: var(--solar-gold);" id="solarVal">8.42</div>
+            <div class="node-unit">Kilowatts (kW)</div>
+          </div>
+          <div class="node-subtext" id="solarSub">Irradiance: 890 W/m² (Peak Sunshine)</div>
+          <div class="node-diagnostics">
+            <div class="diag-item">PV Strings: <span id="pvStringV">42.5V</span></div>
+            <div class="diag-item">Efficiency: <span id="pvEfficiency">97.2%</span></div>
+          </div>
+        </div>
+
+        <!-- Node 2: Battery Storage -->
+        <div class="node-card battery-node active-node" id="batteryNodeCard">
+          <div class="node-header">
+            <span class="node-icon">🔋</span>
+            <span class="node-status status-active" id="batteryStatus">Discharging</span>
+          </div>
+          <div>
+            <div class="node-value" style="color: var(--energy-emerald);" id="batteryVal">78%</div>
+            <div class="node-unit">State of Charge (51.2V)</div>
+          </div>
+          <div class="node-subtext" id="batteryRuntime">Est. Runtime: 14h 25m remaining</div>
+          <div class="node-diagnostics">
+            <div class="diag-item">SoH: <span id="batterySoH">98.5%</span></div>
+            <div class="diag-item">Temp: <span id="batteryTemp">31°C</span></div>
+            <div class="diag-item">Cycles: <span id="batteryCycles">142</span></div>
+            <div class="diag-item">Voltage: <span id="batteryVoltage">51.2V</span></div>
+          </div>
+        </div>
+
+        <!-- Node 3: Church Facility Load -->
+        <div class="node-card load-node active-node" id="loadNodeCard">
+          <div class="node-header">
+            <span class="node-icon">⛪</span>
+            <span class="node-status status-active" id="loadStatus">Active</span>
+          </div>
+          <div>
+            <div class="node-value" style="color: #60A5FA;" id="facilityLoadVal">7.20</div>
+            <div class="node-unit">Total Facility Demand (kW)</div>
+          </div>
+          <div class="node-subtext" id="loadBreakdown">Sanctuary A/C + Sound + Lighting</div>
+        </div>
+
+        <!-- Node 4: Backup Generator -->
+        <div class="node-card gen-node" id="genNodeCard">
+          <div class="node-header">
+            <span class="node-icon">⚙️</span>
+            <span class="node-status status-off" id="genStatus">Standby (0 kW)</span>
+          </div>
+          <div>
+            <div class="node-value" style="color: var(--text-dim);" id="genVal">0.00</div>
+            <div class="node-unit">Diesel Backup (kW)</div>
+          </div>
+          <div class="node-subtext" id="genSub">Zero emissions • Fuel saved today</div>
+        </div>
+      </div>
+
+      <!-- Animated Power Flow Direction Indicators -->
+      <div class="flow-direction-bar" id="flowDirectionBar">
+        <div class="flow-indicator active-flow" id="flowSolarBat">
+          <div class="flow-dot solar"></div>
+          <span>Solar → Battery</span>
+        </div>
+        <div class="flow-indicator active-flow" id="flowSolarLoad">
+          <div class="flow-dot solar"></div>
+          <span>Solar → Facility</span>
+        </div>
+        <div class="flow-indicator" id="flowBatLoad">
+          <div class="flow-dot battery"></div>
+          <span>Battery → Facility</span>
+        </div>
+        <div class="flow-indicator" id="flowGenLoad">
+          <div class="flow-dot gen inactive"></div>
+          <span>Generator → Facility</span>
+        </div>
+      </div>
+
+      <!-- Battery Depletion Time Forecast -->
+      <div class="depletion-timeline" id="depletionTimeline">
+        <div class="depletion-label">Projected Battery Depletion Time</div>
+        <div class="depletion-time" id="depletionTime">—</div>
+        <div class="depletion-detail" id="depletionDetail">Calculating from live telemetry...</div>
+      </div>
+    </section>
+
+    <!-- Secondary Dashboards & Simulation Controls -->
+    <div class="dashboard-grid">
+      <!-- Left Panel: Service Modes, Load Management & Interactive Simulator -->
+      <div class="panel">
+        <!-- Church Service Mode Presets -->
+        <div class="section-eyebrow">Church Service Mode Presets</div>
+        <div class="section-heading" style="margin-bottom: 0.75rem;">One-Touch Operational Profiles</div>
+        <div class="mode-presets-grid" id="modePresetsGrid">
+          <div class="mode-card" onclick="setServiceMode('normal')" id="mode-normal">
+            <div class="mode-icon">🔄</div>
+            <div class="mode-label">Normal Ops</div>
+            <div class="mode-desc">Balanced load</div>
+          </div>
+          <div class="mode-card" onclick="setServiceMode('sunday')" id="mode-sunday">
+            <div class="mode-icon">⛪</div>
+            <div class="mode-label">Sunday Service</div>
+            <div class="mode-desc">Full A/C, AV, Lights</div>
+          </div>
+          <div class="mode-card" onclick="setServiceMode('vigil')" id="mode-vigil">
+            <div class="mode-icon">🌙</div>
+            <div class="mode-label">Night Vigil</div>
+            <div class="mode-desc">Battery conservation</div>
+          </div>
+          <div class="mode-card" onclick="setServiceMode('midweek')" id="mode-midweek">
+            <div class="mode-icon">🤝</div>
+            <div class="mode-label">Midweek Fellowship</div>
+            <div class="mode-desc">Zoned chapel only</div>
+          </div>
+          <div class="mode-card" onclick="setServiceMode('admin')" id="mode-admin">
+            <div class="mode-icon">💻</div>
+            <div class="mode-label">Admin / Office</div>
+            <div class="mode-desc">Low-power weekday</div>
+          </div>
+        </div>
+
+        <div class="section-eyebrow">Load Shedding & Facility Circuits</div>
+        <div class="section-heading" style="margin-bottom: 0.5rem;">Intelligent Load Controls</div>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">
+          Toggle individual circuits to observe instantaneous AI battery forecast adjustments.
+        </p>
+
+        <ul class="load-list" id="circuitsList">
+          <li class="load-item" id="item-sanctuary-ac">
+            <div class="load-info">
+              <input type="checkbox" class="load-toggle" id="chk-ac" checked onchange="updateCircuits()">
+              <label for="chk-ac"><strong>Main Sanctuary Air Conditioning</strong> (Chillers 1 & 2)</label>
+            </div>
+            <span style="font-family: var(--font-mono); color: var(--solar-gold);">3.10 kW</span>
+          </li>
+
+          <li class="load-item" id="item-av">
+            <div class="load-info">
+              <input type="checkbox" class="load-toggle" id="chk-av" checked onchange="updateCircuits()">
+              <label for="chk-av"><strong>Audio / Visual & Live Broadcast Production</strong></label>
+            </div>
+            <span style="font-family: var(--font-mono); color: var(--solar-gold);">1.80 kW</span>
+          </li>
+
+          <li class="load-item" id="item-lighting">
+            <div class="load-info">
+              <input type="checkbox" class="load-toggle" id="chk-light" checked onchange="updateCircuits()">
+              <label for="chk-light"><strong>Security, Compound & Foyer Lighting</strong></label>
+            </div>
+            <span style="font-family: var(--font-mono); color: var(--solar-gold);">0.90 kW</span>
+          </li>
+
+          <li class="load-item" id="item-cold">
+            <div class="load-info">
+              <input type="checkbox" class="load-toggle" id="chk-cold" checked onchange="updateCircuits()">
+              <label for="chk-cold"><strong>Welfare Outreach Refrigeration & Water Coolers</strong></label>
+            </div>
+            <span style="font-family: var(--font-mono); color: var(--solar-gold);">1.40 kW</span>
+          </li>
+        </ul>
+
+        <!-- Interactive Sliders -->
+        <div class="sim-controls">
+          <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.8rem; display: flex; justify-content: space-between;">
+            <span>Interactive Environmental Simulator</span>
+            <span style="color: var(--solar-gold); font-size: 0.8rem; font-family: var(--font-mono);">LIVE RE-CALC</span>
+          </div>
+
+          <div class="sim-slider-row">
+            <div class="slider-label">
+              <span>Sunlight Intensity / Solar Irradiance</span>
+              <span id="sunSliderVal" style="font-family: var(--font-mono); color: var(--solar-gold);">100%</span>
+            </div>
+            <input type="range" min="0" max="100" value="100" class="slider-input" id="sunSlider" oninput="adjustSunlight(this.value)">
+          </div>
+
+          <div class="sim-slider-row" style="margin-bottom: 0;">
+            <div class="slider-label">
+              <span>Battery Reserve Level (Simulated SoC)</span>
+              <span id="socSliderVal" style="font-family: var(--font-mono); color: var(--energy-emerald);">78%</span>
+            </div>
+            <input type="range" min="5" max="100" value="78" class="slider-input" id="socSlider" oninput="adjustBattery(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Mission Fuel Savings & Community Impact -->
+      <div class="panel">
+        <div class="section-eyebrow">Mission Impact Tracker</div>
+        <div class="section-heading" style="margin-bottom: 0.5rem;">Diesel Displaced & Funds Saved</div>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">
+          Redirecting electricity expenditures from generator fuel directly into the Gospel and welfare missions.
+        </p>
+
+        <div class="savings-stat">
+          <div class="savings-num" id="dieselLitres">248</div>
+          <div style="font-size: 1.1rem; color: var(--text-muted); font-weight: 600;">Litres Saved This Month</div>
+        </div>
+
+        <div style="background: var(--bg-surface-elevated); padding: 1rem; border-radius: var(--radius-md); border-left: 3px solid var(--energy-emerald); margin-bottom: 1.25rem;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Estimated Financial Savings</div>
+          <div style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: #34D399;" id="nairaSavings">
+            ₦322,400 <span style="font-size: 0.8rem; color: var(--text-muted);">(@ ₦1,300/L diesel)</span>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface-elevated); padding: 1rem; border-radius: var(--radius-md); border-left: 3px solid var(--generator-amber); margin-bottom: 1.25rem;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Generator Wear Avoided</div>
+          <div style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 600; color: var(--generator-amber);" id="genHoursAvoided">
+            312 run-hours avoided
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 0.25rem;" id="genMaintenanceSaved">
+            ~2 oil changes & 1 filter deferred • ₦45,000 maintenance saved
+          </div>
+        </div>
+
+        <div style="font-size: 0.82rem; color: var(--text-dim); line-height: 1.5;">
+          ✓ Equivalent to <strong>14 tons CO₂ avoided</strong><br>
+          ✓ 100% uninterrupted Sunday Service recorded<br>
+          ✓ Zero generator noise during morning prayers<br>
+          ✓ Savings equivalent to <strong id="welfarePacks">24</strong> welfare food packages
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p><strong>SACHIB Energy</strong> • Intelligent Church Energy Solution • Phase 1 Build</p>
+      <p style="margin-top: 0.4rem;">
+        Works 100% locally with browser mock state •
+        <a href="design.html">Design Tokens</a> • <a href="PRD.md">PRD Specification</a>
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    // ==========================================
+    // SACHIB ENERGY — Intelligence Engine v2.0
+    // ==========================================
+
+    // ----- System State Engine -----
+    const state = {
+      ecoModeActive: false,
+      cloudSimulated: false,
+      solarMaxKw: 8.42,
+      sunFactor: 1.0,
+      batterySoC: 78,
+      batteryCapacityKwh: 28.8,  // 30kWh LiFePO4 bank (usable 96%)
+      batteryVoltageNominal: 51.2,
+      batterySoH: 98.5,
+      batteryCycles: 142,
+      batteryTemp: 31,
+      dieselPricePerLitre: 1300,
+      dieselKwhPerLitre: 3.2,
+      heartbeatCount: 0,
+      activeServiceMode: 'normal',
+      circuits: {
+        ac:    { name: "Main Sanctuary Air Conditioning", load: 3.10, active: true },
+        av:    { name: "Audio / Visual & Production",     load: 1.80, active: true },
+        light: { name: "Lighting & Compound",             load: 0.90, active: true },
+        cold:  { name: "Cold Storage & Coolers",          load: 1.40, active: true }
+      }
+    };
+
+    // ----- Service Mode Presets (PRD Section 8 & 9) -----
+    const serviceModes = {
+      normal: {
+        label: "NORMAL OPS",
+        circuits: { ac: true, av: true, light: true, cold: true },
+        description: "All circuits active — balanced standard operation."
+      },
+      sunday: {
+        label: "SUNDAY SERVICE",
+        circuits: { ac: true, av: true, light: true, cold: true },
+        description: "Full Sanctuary power for worship — A/C, AV live streaming, stage & compound lighting all maximized."
+      },
+      vigil: {
+        label: "NIGHT VIGIL",
+        circuits: { ac: false, av: true, light: true, cold: false },
+        description: "Extended overnight conservation — A/C cycling off, Audio/Mic active, Security lights on, Refrigeration paused."
+      },
+      midweek: {
+        label: "MIDWEEK FELLOWSHIP",
+        circuits: { ac: false, av: true, light: true, cold: false },
+        description: "Zoned chapel power only — A/C off, sound system active for fellowship hall, compound lights on."
+      },
+      admin: {
+        label: "ADMIN / OFFICE",
+        circuits: { ac: false, av: false, light: true, cold: true },
+        description: "Low-power weekday mode — office lights and water coolers only. No sanctuary systems."
+      }
+    };
+
+    // ----- Diurnal Solar Curve (Simulates realistic sun arc) -----
+    function getDiurnalFactor() {
+      const now = new Date();
+      const hour = now.getHours() + now.getMinutes() / 60;
+      // Bell curve peaking at solar noon (12:30 PM), zero at night
+      if (hour < 6 || hour > 19) return 0;
+      // Gaussian-like curve centered at 12.5
+      const peak = 12.5;
+      const sigma = 3.2;
+      return Math.exp(-0.5 * Math.pow((hour - peak) / sigma, 2));
+    }
+
+    function getSolarTimeLabel() {
+      const now = new Date();
+      const hour = now.getHours();
+      if (hour < 6)  return "Night — No Solar Generation";
+      if (hour < 8)  return "Early Morning — Solar Ramp-Up";
+      if (hour < 11) return "Morning — Good Generation";
+      if (hour < 14) return "Peak — Maximum Solar Window";
+      if (hour < 17) return "Afternoon — Declining Output";
+      if (hour < 19) return "Late Afternoon — Low Generation";
+      return "Evening — No Solar Generation";
+    }
+
+    // ----- Initialize -----
+    function init() {
+      const savedFacility = localStorage.getItem('sachib_facility');
+      if (savedFacility) {
+        document.getElementById('facilitySelect').value = savedFacility;
+      }
+
+      const savedMode = localStorage.getItem('sachib_service_mode');
+      if (savedMode && serviceModes[savedMode]) {
+        setServiceMode(savedMode, true);
+      } else {
+        setServiceMode('normal', true);
+      }
+
+      recalculateEnergy();
+      updateSystemClock();
+
+      // Start live telemetry heartbeat (every 2 seconds)
+      setInterval(telemetryHeartbeat, 2000);
+      // Update clock every second
+      setInterval(updateSystemClock, 1000);
+    }
+
+    // ----- System Clock -----
+    function updateSystemClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('systemClock').innerText = timeStr;
+      document.getElementById('solarTimeLabel').innerText = getSolarTimeLabel();
+    }
+
+    // ----- Live Telemetry Heartbeat (Task 1.1) -----
+    function telemetryHeartbeat() {
+      state.heartbeatCount++;
+      document.getElementById('heartbeatCounter').innerText = state.heartbeatCount;
+
+      // Simulate realistic micro-fluctuations
+      const solarJitter = (Math.random() - 0.5) * 0.15;  // ±0.075 kW noise
+      const batteryTempJitter = (Math.random() - 0.5) * 0.4;
+
+      // Apply diurnal curve to sun factor if not manually overridden by slider
+      if (!state.cloudSimulated) {
+        const diurnal = getDiurnalFactor();
+        // Blend manual slider with diurnal: use slider as a multiplier on top of diurnal
+        // If slider is at 100%, use full diurnal. If slider is at 50%, halve the diurnal.
+        const effectiveSun = diurnal * state.sunFactor;
+        // We store this but don't override sunFactor (slider controls the manual component)
+        state._effectiveSunFactor = Math.max(0, effectiveSun);
+      }
+
+      // Battery temperature simulation
+      state.batteryTemp = Math.max(25, Math.min(45, state.batteryTemp + batteryTempJitter));
+
+      // Recalculate with jitter
+      recalculateEnergy(solarJitter);
+    }
+
+    // ----- Facility Switcher -----
+    document.getElementById('facilitySelect').addEventListener('change', (e) => {
+      localStorage.setItem('sachib_facility', e.target.value);
+      if (e.target.value === 'member_biz') {
+        document.getElementById('roleText').innerText = "MEMBER: COLD STORAGE & BAKERY";
+        document.getElementById('circuitsList').children[0].querySelector('label strong').innerText = "Walk-in Blast Freezer";
+      } else if (e.target.value === 'clinic') {
+        document.getElementById('roleText').innerText = "ADMIN: CLINIC DIRECTOR";
+        document.getElementById('circuitsList').children[0].querySelector('label strong').innerText = "Clinic HVAC & Vaccine Cold Chain";
+      } else if (e.target.value === 'academy') {
+        document.getElementById('roleText').innerText = "ADMIN: CAMPUS MANAGER";
+        document.getElementById('circuitsList').children[0].querySelector('label strong').innerText = "Classroom Fans & Computer Lab";
+      } else {
+        document.getElementById('roleText').innerText = "ADMIN: FACILITY DIRECTOR";
+        document.getElementById('circuitsList').children[0].querySelector('label strong').innerText = "Main Sanctuary Air Conditioning";
+      }
+      recalculateEnergy();
+    });
+
+    // ----- Service Mode Presets (Task 3.1) -----
+    document.getElementById('serviceModeSelect').addEventListener('change', (e) => {
+      setServiceMode(e.target.value);
+    });
+
+    function setServiceMode(mode, skipRecalc) {
+      const preset = serviceModes[mode];
+      if (!preset) return;
+
+      state.activeServiceMode = mode;
+      localStorage.setItem('sachib_service_mode', mode);
+
+      // Update mode selector dropdown
+      document.getElementById('serviceModeSelect').value = mode;
+
+      // Update active mode label in clock bar
+      document.getElementById('activeModeLabel').innerText = preset.label;
+
+      // Apply circuit presets
+      document.getElementById('chk-ac').checked = preset.circuits.ac;
+      document.getElementById('chk-av').checked = preset.circuits.av;
+      document.getElementById('chk-light').checked = preset.circuits.light;
+      document.getElementById('chk-cold').checked = preset.circuits.cold;
+
+      // Update mode card highlights
+      document.querySelectorAll('.mode-card').forEach(card => card.classList.remove('mode-active'));
+      const activeCard = document.getElementById('mode-' + mode);
+      if (activeCard) activeCard.classList.add('mode-active');
+
+      // Update internal state
+      state.circuits.ac.active = preset.circuits.ac;
+      state.circuits.av.active = preset.circuits.av;
+      state.circuits.light.active = preset.circuits.light;
+      state.circuits.cold.active = preset.circuits.cold;
+
+      // Update shedded visuals
+      document.getElementById('item-sanctuary-ac').classList.toggle('shedded', !preset.circuits.ac);
+      document.getElementById('item-av').classList.toggle('shedded', !preset.circuits.av);
+      document.getElementById('item-lighting').classList.toggle('shedded', !preset.circuits.light);
+      document.getElementById('item-cold').classList.toggle('shedded', !preset.circuits.cold);
+
+      if (!skipRecalc) recalculateEnergy();
+    }
+
+    // ----- Circuit Toggles -----
+    function updateCircuits() {
+      state.circuits.ac.active = document.getElementById('chk-ac').checked;
+      state.circuits.av.active = document.getElementById('chk-av').checked;
+      state.circuits.light.active = document.getElementById('chk-light').checked;
+      state.circuits.cold.active = document.getElementById('chk-cold').checked;
+
+      // Strikethrough visual
+      document.getElementById('item-sanctuary-ac').classList.toggle('shedded', !state.circuits.ac.active);
+      document.getElementById('item-av').classList.toggle('shedded', !state.circuits.av.active);
+      document.getElementById('item-lighting').classList.toggle('shedded', !state.circuits.light.active);
+      document.getElementById('item-cold').classList.toggle('shedded', !state.circuits.cold.active);
+
+      // If circuits were manually changed, clear the mode-active highlight
+      document.querySelectorAll('.mode-card').forEach(card => card.classList.remove('mode-active'));
+
+      recalculateEnergy();
+    }
+
+    // ----- Interactive Slider Handlers -----
+    function adjustSunlight(val) {
+      state.sunFactor = val / 100;
+      document.getElementById('sunSliderVal').innerText = val + "%";
+      recalculateEnergy();
+    }
+
+    function adjustBattery(val) {
+      state.batterySoC = parseInt(val, 10);
+      document.getElementById('socSliderVal').innerText = val + "%";
+      recalculateEnergy();
+    }
+
+    // ----- Core AI Predictive Engine (Task 2.1) -----
+    function recalculateEnergy(solarJitter) {
+      solarJitter = solarJitter || 0;
+
+      // 1. Calculate PV Output with diurnal curve
+      const effectiveSun = state._effectiveSunFactor !== undefined ? state._effectiveSunFactor : state.sunFactor;
+      let currentSolar = +(state.solarMaxKw * effectiveSun + solarJitter).toFixed(2);
+      currentSolar = Math.max(0, currentSolar);
+
+      document.getElementById('solarVal').innerText = currentSolar.toFixed(2);
+
+      const irradiance = Math.round(890 * effectiveSun);
+      let solarLabel = 'Low Irradiance';
+      if (currentSolar > 6) solarLabel = 'Peak Sunshine';
+      else if (currentSolar > 4) solarLabel = 'Good Generation';
+      else if (currentSolar > 1) solarLabel = 'Moderate';
+      else if (currentSolar === 0) solarLabel = 'No Sunlight';
+
+      document.getElementById('solarSub').innerText = `Irradiance: ${irradiance} W/m² (${solarLabel})`;
+
+      // Solar node status
+      if (currentSolar > 0.5) {
+        document.getElementById('solarStatus').innerText = "Generating";
+        document.getElementById('solarStatus').className = "node-status status-active";
+        document.getElementById('solarNodeCard').classList.add('active-node');
+      } else {
+        document.getElementById('solarStatus').innerText = "Idle (Night)";
+        document.getElementById('solarStatus').className = "node-status status-off";
+        document.getElementById('solarNodeCard').classList.remove('active-node');
+      }
+
+      // PV diagnostics
+      document.getElementById('pvStringV').innerText = (42.5 * effectiveSun + 5).toFixed(1) + 'V';
+      document.getElementById('pvEfficiency').innerText = (currentSolar > 0 ? (95 + Math.random() * 3).toFixed(1) : '0.0') + '%';
+
+      // 2. Calculate Facility Demand
+      let currentLoad = 0;
+      for (const key in state.circuits) {
+        if (state.circuits[key].active) {
+          currentLoad += state.circuits[key].load;
+        }
+      }
+      currentLoad = +currentLoad.toFixed(2);
+      document.getElementById('facilityLoadVal').innerText = currentLoad.toFixed(2);
+
+      // 3. Battery State & Runtime Projection
+      document.getElementById('batteryVal').innerText = state.batterySoC + "%";
+
+      const usableKwh = (state.batterySoC / 100) * state.batteryCapacityKwh;
+      const netDeficit = Math.max(0, currentLoad - currentSolar);
+      const netSurplus = Math.max(0, currentSolar - currentLoad);
+
+      let estHours = 0;
+      let depletionTimeStr = "—";
+      let depletionDetail = "";
+
+      if (netDeficit > 0) {
+        estHours = +(usableKwh / netDeficit).toFixed(1);
+        const estMinutes = Math.round(estHours * 60);
+        const h = Math.floor(estMinutes / 60);
+        const m = estMinutes % 60;
+        document.getElementById('batteryRuntime').innerText = `Est. Runtime: ${h}h ${m}m remaining on battery`;
+        document.getElementById('batteryStatus').innerText = "Discharging";
+        document.getElementById('batteryStatus').className = "node-status status-active";
+
+        // Calculate depletion clock time
+        const now = new Date();
+        const depletionDate = new Date(now.getTime() + estMinutes * 60000);
+        depletionTimeStr = depletionDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        depletionDetail = `At current ${netDeficit.toFixed(2)} kW deficit, battery reaches 0% at ${depletionTimeStr}`;
+
+        // Style depletion display based on urgency
+        const depEl = document.getElementById('depletionTimeline');
+        if (estHours < 3) {
+          depEl.style.borderLeftColor = 'var(--alert-crimson)';
+          document.getElementById('depletionTime').style.color = '#F87171';
+        } else if (estHours < 8) {
+          depEl.style.borderLeftColor = 'var(--solar-gold)';
+          document.getElementById('depletionTime').style.color = 'var(--solar-gold)';
+        } else {
+          depEl.style.borderLeftColor = 'var(--battery-cyan)';
+          document.getElementById('depletionTime').style.color = 'var(--battery-cyan)';
+        }
+      } else {
+        document.getElementById('batteryRuntime').innerText = "Solar surplus charging battery (+ " + netSurplus.toFixed(2) + " kW)";
+        document.getElementById('batteryStatus').innerText = "Charging";
+        document.getElementById('batteryStatus').className = "node-status status-charging";
+        depletionTimeStr = "∞ Surplus";
+        depletionDetail = `Solar surplus of ${netSurplus.toFixed(2)} kW is actively charging the battery bank.`;
+        document.getElementById('depletionTimeline').style.borderLeftColor = 'var(--energy-emerald)';
+        document.getElementById('depletionTime').style.color = 'var(--energy-emerald)';
+      }
+
+      document.getElementById('depletionTime').innerText = depletionTimeStr;
+      document.getElementById('depletionDetail').innerText = depletionDetail;
+
+      // Battery diagnostics
+      const voltageAdjust = 48 + (state.batterySoC / 100) * 6;  // 48V–54V range
+      document.getElementById('batteryVoltage').innerText = voltageAdjust.toFixed(1) + 'V';
+      document.getElementById('batterySoH').innerText = state.batterySoH.toFixed(1) + '%';
+      document.getElementById('batteryTemp').innerText = Math.round(state.batteryTemp) + '°C';
+      document.getElementById('batteryCycles').innerText = state.batteryCycles;
+
+      // 4. Generator Status
+      if (state.batterySoC < 15 && currentSolar < 1) {
+        document.getElementById('genStatus').innerText = "RUNNING";
+        document.getElementById('genStatus').className = "node-status status-warning";
+        document.getElementById('genVal').innerText = currentLoad.toFixed(2);
+        document.getElementById('genVal').style.color = 'var(--generator-amber)';
+        document.getElementById('genSub').innerText = "⚠ Emergency backup active — diesel burning";
+        document.getElementById('genNodeCard').classList.add('active-node');
+      } else {
+        document.getElementById('genStatus').innerText = "Standby (0 kW)";
+        document.getElementById('genStatus').className = "node-status status-off";
+        document.getElementById('genVal').innerText = "0.00";
+        document.getElementById('genVal').style.color = 'var(--text-dim)';
+        document.getElementById('genSub').innerText = "Zero emissions • Fuel saved today";
+        document.getElementById('genNodeCard').classList.remove('active-node');
+      }
+
+      // 5. Update Power Flow Direction Indicators (Task 1.2)
+      updateFlowIndicators(currentSolar, currentLoad, netDeficit, netSurplus);
+
+      // 6. Update Prescriptive Advisory Banner based on AI heuristic
+      updateAdvisory(currentSolar, currentLoad, estHours);
+    }
+
+    // ----- Power Flow Direction Indicators (Task 1.2) -----
+    function updateFlowIndicators(solar, load, deficit, surplus) {
+      const flowSolarBat = document.getElementById('flowSolarBat');
+      const flowSolarLoad = document.getElementById('flowSolarLoad');
+      const flowBatLoad = document.getElementById('flowBatLoad');
+      const flowGenLoad = document.getElementById('flowGenLoad');
+
+      // Solar → Battery (when surplus)
+      if (surplus > 0 && solar > 0.5) {
+        flowSolarBat.classList.add('active-flow');
+        flowSolarBat.querySelector('.flow-dot').classList.remove('inactive');
+      } else {
+        flowSolarBat.classList.remove('active-flow');
+        flowSolarBat.querySelector('.flow-dot').classList.add('inactive');
+      }
+
+      // Solar → Facility (when generating)
+      if (solar > 0.5) {
+        flowSolarLoad.classList.add('active-flow');
+        flowSolarLoad.querySelector('.flow-dot').classList.remove('inactive');
+      } else {
+        flowSolarLoad.classList.remove('active-flow');
+        flowSolarLoad.querySelector('.flow-dot').classList.add('inactive');
+      }
+
+      // Battery → Facility (when discharging)
+      if (deficit > 0) {
+        flowBatLoad.classList.add('active-flow');
+        flowBatLoad.querySelector('.flow-dot').classList.remove('inactive');
+      } else {
+        flowBatLoad.classList.remove('active-flow');
+        flowBatLoad.querySelector('.flow-dot').classList.add('inactive');
+      }
+
+      // Generator → Facility (when gen active)
+      if (state.batterySoC < 15 && solar < 1) {
+        flowGenLoad.classList.add('active-flow');
+        flowGenLoad.querySelector('.flow-dot').classList.remove('inactive');
+      } else {
+        flowGenLoad.classList.remove('active-flow');
+        flowGenLoad.querySelector('.flow-dot').classList.add('inactive');
+      }
+    }
+
+    // ----- Multi-Tier Prescriptive Advisory Engine (Task 2.2) -----
+    function updateAdvisory(solar, load, hours) {
+      const banner = document.getElementById('advisoryBanner');
+      const iconWrapper = document.getElementById('advisoryIconWrapper');
+      const badge = document.getElementById('advisoryBadge');
+      const heading = document.getElementById('advisoryHeading');
+      const msg = document.getElementById('advisoryMessage');
+      const advLoad = document.getElementById('advCurrentLoad');
+      const advSoC = document.getElementById('advBatterySoC');
+
+      advLoad.innerText = load + " kW";
+      advSoC.innerText = state.batterySoC + "%";
+
+      // Remove all variant classes
+      banner.classList.remove('advisory-critical', 'advisory-optimal');
+
+      if (state.batterySoC < 20 || (hours > 0 && hours < 3)) {
+        // 🔴 CRITICAL
+        banner.classList.add('advisory-critical');
+        badge.innerText = "CRITICAL ADVISORY • ACTION REQUIRED";
+        badge.style.background = "#EF4444";
+        iconWrapper.style.background = "rgba(239, 68, 68, 0.2)";
+        iconWrapper.style.borderColor = "rgba(239, 68, 68, 0.5)";
+        heading.innerText = "Severe Battery Depletion Risk";
+        msg.innerHTML = `⚠️ High facility demand (<strong>${load} kW</strong>) with battery at <strong>${state.batterySoC}%</strong> will deplete reserves within <strong>${hours} hours</strong>. Generator auto-start will be triggered unless non-essential circuits are shed immediately. Switch to <strong>Night Vigil</strong> or <strong>Admin Mode</strong> to extend battery life.`;
+      } else if (state.batterySoC < 40 || (hours > 0 && hours < 6)) {
+        // 🟡 CAUTIONARY
+        badge.innerText = "AI PREDICTIVE NOTICE • CAUTION";
+        badge.style.background = "#F59E0B";
+        iconWrapper.style.background = "rgba(245, 158, 11, 0.2)";
+        iconWrapper.style.borderColor = "rgba(245, 158, 11, 0.5)";
+        heading.innerText = "Anticipated Evening Deficit Warning";
+        msg.innerHTML = `Current facility load is <strong>${load} kW</strong> with battery at <strong>${state.batterySoC}%</strong>. At the current draw rate, battery reserves may deplete within <strong>${hours} hours</strong>. Consider shedding sanctuary A/C (<strong>3.10 kW</strong>) to extend runtime for the evening service.`;
+      } else if (state.ecoModeActive) {
+        // 🟢 ECO OPTIMIZED
+        banner.classList.add('advisory-optimal');
+        badge.innerText = "OPTIMIZED • ECO-SHEDDING ACTIVE";
+        badge.style.background = "#10B981";
+        iconWrapper.style.background = "rgba(16, 185, 129, 0.2)";
+        iconWrapper.style.borderColor = "rgba(16, 185, 129, 0.5)";
+        heading.innerText = "Protected Service Schedule Confirmed";
+        msg.innerHTML = `Eco-shedding is currently active. <strong>3.10 kW</strong> saved. Battery reserve is projected to safely last through the night with <strong>${hours || '18+'}h buffer</strong> remaining. All essential ministry circuits are fully powered.`;
+      } else {
+        // 🟢 STABLE
+        banner.classList.add('advisory-optimal');
+        badge.innerText = "AI PREDICTIVE NOTICE • STABLE";
+        badge.style.background = "#10B981";
+        iconWrapper.style.background = "rgba(16, 185, 129, 0.2)";
+        iconWrapper.style.borderColor = "rgba(16, 185, 129, 0.5)";
+        heading.innerText = "Normal Solar Operation Profile";
+        msg.innerHTML = `Facility load is well-balanced. Solar generation delivers <strong>${solar} kW</strong> against <strong>${load} kW</strong> demand. We recommend keeping heavy cooling cycles between 11:00 AM and 2:00 PM to maximize direct solar usage.`;
+      }
+    }
+
+    // ----- Eco Mode Toggle -----
+    function toggleEcoMode() {
+      state.ecoModeActive = !state.ecoModeActive;
+      const btn = document.getElementById('btnShedLoads');
+
+      if (state.ecoModeActive) {
+        document.getElementById('chk-ac').checked = false;
+        btn.innerText = "↩ Restore Full Power";
+        btn.classList.remove('btn-gold');
+        btn.classList.add('btn-emerald');
+      } else {
+        document.getElementById('chk-ac').checked = true;
+        btn.innerText = "⚡ Apply Eco-Shedding (Save 3.1 kW)";
+        btn.classList.remove('btn-emerald');
+        btn.classList.add('btn-gold');
+      }
+      updateCircuits();
+    }
+
+    // ----- Weather Simulation -----
+    function simulateCloudEvent() {
+      state.cloudSimulated = !state.cloudSimulated;
+      const slider = document.getElementById('sunSlider');
+      const btn = document.getElementById('btnSimulateCloud');
+
+      if (state.cloudSimulated) {
+        slider.value = 20;
+        adjustSunlight(20);
+        btn.innerText = "☀️ Clear Overcast Sky";
+      } else {
+        slider.value = 100;
+        adjustSunlight(100);
+        btn.innerText = "⛅ Simulate Heavy Overcast";
+      }
+    }
+
+    // ----- Export Mock Audit CSV (Browser File Generation) -----
+    function exportEnergyAudit() {
+      const facility = document.getElementById('facilitySelect').value;
+      const mode = state.activeServiceMode;
+      const csvData = [
+        ["Timestamp", "Facility", "Service_Mode", "Solar_kW", "Battery_SoC", "Battery_SoH", "Battery_Temp_C", "Load_kW", "Generator_kW", "Net_Flow", "Diesel_Litres_Saved"],
+        [new Date().toISOString(), facility, mode, document.getElementById('solarVal').innerText, state.batterySoC + "%", state.batterySoH + "%", Math.round(state.batteryTemp), document.getElementById('facilityLoadVal').innerText, document.getElementById('genVal').innerText, "Solar Primary", "248"],
+        [new Date(Date.now() - 3600000).toISOString(), facility, mode, "7.95", "74%", "98.5%", "30", "6.80", "0.00", "Solar Primary", "245"],
+        [new Date(Date.now() - 7200000).toISOString(), facility, mode, "6.50", "69%", "98.5%", "29", "6.50", "0.00", "Solar Balanced", "240"],
+        [new Date(Date.now() - 10800000).toISOString(), facility, mode, "4.20", "63%", "98.5%", "28", "5.80", "0.00", "Battery Supplementing", "234"],
+        [new Date(Date.now() - 14400000).toISOString(), facility, mode, "2.10", "58%", "98.4%", "27", "5.50", "0.00", "Battery Primary", "228"]
+      ].map(e => e.join(",")).join("\n");
+
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `SACHIB_Energy_Audit_${facility}_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // ----- Initialize on page load -----
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
