@@ -896,10 +896,15 @@
           <option value="admin">Weekday Admin / Office</option>
         </select>
 
-        <div class="role-badge">
+        <div class="role-badge" title="Current view role. Designer is an Admin type for sizing and setup.">
           <div class="pulse-dot"></div>
           <span id="roleText">ADMIN: FACILITY DIRECTOR</span>
         </div>
+        <select id="roleSelect" class="select-mode" aria-label="Switch user role view" title="Admin manages. Designer is an Admin type for design. Member uses energy.">
+          <option value="admin">Admin view</option>
+          <option value="designer">Designer view (Admin type)</option>
+          <option value="member">Member view</option>
+        </select>
 
         <a href="design.html" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.8rem;">
           🎨 Design Tokens
@@ -952,7 +957,7 @@
           <button class="btn btn-secondary" id="btnSimulateCloud" onclick="simulateCloudEvent()">
             ⛅ Simulate Heavy Overcast
           </button>
-          <button class="btn btn-secondary" onclick="exportEnergyAudit()">
+          <button class="btn btn-secondary" id="btnExportAudit" onclick="exportEnergyAudit()">
             📥 Export Energy Audit (CSV)
           </button>
         </div>
@@ -1136,6 +1141,21 @@
             <span style="font-family: var(--font-mono); color: var(--solar-gold);">1.40 kW</span>
           </li>
         </ul>
+        <p id="essentialNote" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.4rem;">
+          🔒 = essential circuit. It stays on and cannot be shed (e.g. clinic vaccine fridge).
+        </p>
+
+        <!-- Designer panel: sizing help. Only for Admin / Designer. Hidden for Member. -->
+        <div id="designPanel" style="margin-top: 1rem; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: rgba(255,255,255,.02);">
+          <div style="font-weight: 700; margin-bottom: .25rem;">Designer sizing helper <span style="font-weight:400; color: var(--text-muted); font-size:.8rem;">(Admin type only)</span></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; margin: .6rem 0;">
+            <label style="font-size:.8rem;">Daily need (kWh)<br><input id="desKwh" type="number" value="32" min="1" max="500" style="width:100%; padding:.45rem; border-radius:8px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);" oninput="designCalc()"></label>
+            <label style="font-size:.8rem;">Sun hours (PSH)<br><input id="desPsh" type="number" value="4.2" step="0.1" min="2" max="7" style="width:100%; padding:.45rem; border-radius:8px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);" oninput="designCalc()"></label>
+            <label style="font-size:.8rem;">Backup days<br><input id="desDays" type="number" value="2" step="0.5" min="1" max="3" style="width:100%; padding:.45rem; border-radius:8px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);" oninput="designCalc()"></label>
+          </div>
+          <div id="designOut" style="font-family: var(--font-mono); font-size: .85rem;">PV ≈ — kWp • Battery ≈ — kWh</div>
+          <div style="font-size:.75rem; color: var(--text-muted);">PV = kWh ÷ (PSH × 0.75) • Battery = (kWh × days) ÷ (0.8 × 0.92). Guide only.</div>
+        </div>
 
         <!-- Interactive Sliders -->
         <div class="sim-controls">
@@ -1288,6 +1308,126 @@
       }
     };
 
+    // ----- Phase 4: Facility profiles (simple loads + essential locks) -----
+    // Each site has 4 circuits: ac / av / light / cold slots reused for simplicity.
+    const facilityProfiles = {
+      cathedral: {
+        roleLabel: 'ADMIN: FACILITY DIRECTOR',
+        circuits: {
+          ac:    { name: 'Main Sanctuary Air Conditioning', load: 3.10, essential: false },
+          av:    { name: 'Audio / Visual & Live Broadcast', load: 1.80, essential: false },
+          light: { name: 'Security, Compound & Foyer Lighting', load: 0.90, essential: true },
+          cold:  { name: 'Welfare Refrigeration & Water Coolers', load: 1.40, essential: false }
+        }
+      },
+      clinic: {
+        roleLabel: 'ADMIN: CLINIC DIRECTOR',
+        circuits: {
+          ac:    { name: 'Clinic HVAC & Vaccine Cold Chain', load: 2.20, essential: false },
+          av:    { name: 'Laboratory & Emergency Lighting', load: 1.10, essential: true },
+          light: { name: 'Vaccine Refrigeration (24/7)', load: 0.80, essential: true },
+          cold:  { name: 'Ward Lighting & Ventilation', load: 0.50, essential: true }
+        }
+      },
+      academy: {
+        roleLabel: 'ADMIN: CAMPUS MANAGER',
+        circuits: {
+          ac:    { name: 'Classroom Fans & Computer Lab', load: 1.50, essential: false },
+          av:    { name: 'Water Pumping (daytime)', load: 1.80, essential: false },
+          light: { name: 'Classroom Lighting', load: 0.60, essential: false },
+          cold:  { name: 'Office & Security Power', load: 1.20, essential: true }
+        }
+      },
+      member_biz: {
+        roleLabel: 'MEMBER: COLD STORAGE & BAKERY',
+        circuits: {
+          ac:    { name: 'Walk-in Blast Freezer (2h holdover)', load: 2.40, essential: true },
+          av:    { name: 'Bakery Ovens (schedulable)', load: 2.00, essential: false },
+          light: { name: 'Shop Lighting', load: 0.50, essential: false },
+          cold:  { name: 'Fans & Small Loads', load: 0.40, essential: false }
+        }
+      }
+    };
+
+    // ----- Phase 4: Roles — Admin manages, Designer is an Admin type, Member uses -----
+    function getRole() { return localStorage.getItem('sachib_role') || 'admin'; }
+    function applyRole() {
+      const role = getRole();
+      const sel = document.getElementById('roleSelect');
+      if (sel) sel.value = role;
+      const badge = document.getElementById('roleText');
+      const facility = document.getElementById('facilitySelect').value;
+      // Badge shows role clearly
+      if (role === 'member') {
+        if (badge) badge.innerText = 'MEMBER VIEW';
+      } else if (role === 'designer') {
+        if (badge) badge.innerText = 'DESIGNER (ADMIN TYPE)';
+      } else {
+        const prof = facilityProfiles[facility];
+        if (badge) badge.innerText = prof ? prof.roleLabel : 'ADMIN VIEW';
+      }
+      // Member limits: no facility change, no export, no design panel
+      const isMember = (role === 'member');
+      const facSel = document.getElementById('facilitySelect');
+      if (facSel) facSel.disabled = isMember;
+      const expBtn = document.getElementById('btnExportAudit');
+      if (expBtn) expBtn.style.display = isMember ? 'none' : '';
+      const dPanel = document.getElementById('designPanel');
+      if (dPanel) dPanel.style.display = isMember ? 'none' : 'block';
+      // Mode cards + sliders stay usable for all (members can save power too)
+      renderCircuits();
+      designCalc();
+    }
+
+    // Redraw the 4 circuit rows from the active facility profile
+    function renderCircuits() {
+      const facility = document.getElementById('facilitySelect').value;
+      const prof = facilityProfiles[facility] || facilityProfiles.cathedral;
+      const role = getRole();
+      const isMember = (role === 'member');
+      const rows = [
+        { key: 'ac', chk: 'chk-ac', item: 'item-sanctuary-ac' },
+        { key: 'av', chk: 'chk-av', item: 'item-av' },
+        { key: 'light', chk: 'chk-light', item: 'item-lighting' },
+        { key: 'cold', chk: 'chk-cold', item: 'item-cold' }
+      ];
+      rows.forEach(r => {
+        const def = prof.circuits[r.key];
+        // keep on/off, update name + size + lock
+        state.circuits[r.key].name = def.name;
+        state.circuits[r.key].load = def.load;
+        state.circuits[r.key].essential = def.essential;
+        const li = document.getElementById(r.item);
+        if (li) {
+          li.querySelector('label strong').innerText = (def.essential ? '🔒 ' : '') + def.name;
+          li.querySelector('span').innerText = def.load.toFixed(2) + ' kW';
+          li.classList.toggle('shedded', !state.circuits[r.key].active);
+        }
+        const chk = document.getElementById(r.chk);
+        if (chk) {
+          // Essential can never be turned off. Members also cannot edit locked essential.
+          chk.disabled = !!def.essential;
+          chk.title = def.essential ? 'Essential — always on' : 'Toggle this circuit';
+        }
+      });
+      // Eco / charge buttons still work but skip essential circuits
+      void isMember;
+      recalculateEnergy();
+    }
+
+    // Simple sizing math for designers (guide only, free, no server)
+    function designCalc() {
+      try {
+        const kwh = parseFloat(document.getElementById('desKwh').value) || 0;
+        const psh = parseFloat(document.getElementById('desPsh').value) || 4.2;
+        const days = parseFloat(document.getElementById('desDays').value) || 2;
+        const pv = kwh / (psh * 0.75);
+        const batt = (kwh * days) / (0.8 * 0.92);
+        document.getElementById('designOut').innerText =
+          'PV ≈ ' + pv.toFixed(1) + ' kWp • Battery ≈ ' + batt.toFixed(1) + ' kWh';
+      } catch (err) {}
+    }
+
     // ----- Service Mode Presets (PRD Section 8 & 9) -----
     const serviceModes = {
       normal: {
@@ -1347,6 +1487,10 @@
       if (savedFacility) {
         document.getElementById('facilitySelect').value = savedFacility;
       }
+      const savedRole = localStorage.getItem('sachib_role');
+      if (savedRole) {
+        document.getElementById('roleSelect').value = savedRole;
+      }
 
       const savedMode = localStorage.getItem('sachib_service_mode');
       if (savedMode && serviceModes[savedMode]) {
@@ -1358,6 +1502,7 @@
       recalculateEnergy();
       updateSystemClock();
       TelemetryLog.init();
+      applyRole();
 
       // Start live telemetry heartbeat (every 2 seconds)
       setInterval(telemetryHeartbeat, 2000);
@@ -1435,23 +1580,17 @@
       } catch (err) {}
     }
 
-    // ----- Facility Switcher -----
+    // ----- Facility Switcher (Phase 4: loads + essential locks per site) -----
     document.getElementById('facilitySelect').addEventListener('change', (e) => {
       localStorage.setItem('sachib_facility', e.target.value);
-      if (e.target.value === 'member_biz') {
-        document.getElementById('roleText').innerText = "MEMBER: COLD STORAGE & BAKERY";
-        document.getElementById('circuitsList').children[0].querySelector('label strong').innerText = "Walk-in Blast Freezer";
-      } else if (e.target.value === 'clinic') {
-        document.getElementById('roleText').innerText = "ADMIN: CLINIC DIRECTOR";
-        document.getElementById('circuitsList').children[0].querySelector('label strong').innerText = "Clinic HVAC & Vaccine Cold Chain";
-      } else if (e.target.value === 'academy') {
-        document.getElementById('roleText').innerText = "ADMIN: CAMPUS MANAGER";
-        document.getElementById('circuitsList').children[0].querySelector('label strong').innerText = "Classroom Fans & Computer Lab";
-      } else {
-        document.getElementById('roleText').innerText = "ADMIN: FACILITY DIRECTOR";
-        document.getElementById('circuitsList').children[0].querySelector('label strong').innerText = "Main Sanctuary Air Conditioning";
-      }
-      recalculateEnergy();
+      // keep current on/off where possible, then redraw names, sizes, locks
+      applyRole();
+    });
+
+    // ----- Role Switcher (Phase 4) -----
+    document.getElementById('roleSelect').addEventListener('change', (e) => {
+      localStorage.setItem('sachib_role', e.target.value);
+      applyRole();
     });
 
     // ----- Service Mode Presets (Task 3.1) -----
@@ -1472,11 +1611,21 @@
       // Update active mode label in clock bar
       document.getElementById('activeModeLabel').innerText = preset.label;
 
-      // Apply circuit presets
-      document.getElementById('chk-ac').checked = preset.circuits.ac;
-      document.getElementById('chk-av').checked = preset.circuits.av;
-      document.getElementById('chk-light').checked = preset.circuits.light;
-      document.getElementById('chk-cold').checked = preset.circuits.cold;
+      // Apply circuit presets, but essential circuits always stay on
+      const want = {
+        ac: preset.circuits.ac,
+        av: preset.circuits.av,
+        light: preset.circuits.light,
+        cold: preset.circuits.cold
+      };
+      if (state.circuits.ac.essential) want.ac = true;
+      if (state.circuits.av.essential) want.av = true;
+      if (state.circuits.light.essential) want.light = true;
+      if (state.circuits.cold.essential) want.cold = true;
+      document.getElementById('chk-ac').checked = want.ac;
+      document.getElementById('chk-av').checked = want.av;
+      document.getElementById('chk-light').checked = want.light;
+      document.getElementById('chk-cold').checked = want.cold;
 
       // Update mode card highlights + a11y pressed state
       document.querySelectorAll('.mode-card').forEach(card => { card.classList.remove('mode-active'); card.setAttribute('aria-pressed', 'false'); });
@@ -1484,26 +1633,33 @@
       if (activeCard) { activeCard.classList.add('mode-active'); activeCard.setAttribute('aria-pressed', 'true'); }
 
       // Update internal state
-      state.circuits.ac.active = preset.circuits.ac;
-      state.circuits.av.active = preset.circuits.av;
-      state.circuits.light.active = preset.circuits.light;
-      state.circuits.cold.active = preset.circuits.cold;
+      state.circuits.ac.active = want.ac;
+      state.circuits.av.active = want.av;
+      state.circuits.light.active = want.light;
+      state.circuits.cold.active = want.cold;
 
       // Update shedded visuals
-      document.getElementById('item-sanctuary-ac').classList.toggle('shedded', !preset.circuits.ac);
-      document.getElementById('item-av').classList.toggle('shedded', !preset.circuits.av);
-      document.getElementById('item-lighting').classList.toggle('shedded', !preset.circuits.light);
-      document.getElementById('item-cold').classList.toggle('shedded', !preset.circuits.cold);
+      document.getElementById('item-sanctuary-ac').classList.toggle('shedded', !want.ac);
+      document.getElementById('item-av').classList.toggle('shedded', !want.av);
+      document.getElementById('item-lighting').classList.toggle('shedded', !want.light);
+      document.getElementById('item-cold').classList.toggle('shedded', !want.cold);
 
       if (!skipRecalc) recalculateEnergy();
     }
 
-    // ----- Circuit Toggles -----
+    // ----- Circuit Toggles (Phase 4: essential circuits stay on) -----
     function updateCircuits() {
-      state.circuits.ac.active = document.getElementById('chk-ac').checked;
-      state.circuits.av.active = document.getElementById('chk-av').checked;
-      state.circuits.light.active = document.getElementById('chk-light').checked;
-      state.circuits.cold.active = document.getElementById('chk-cold').checked;
+      const forceOn = (key, chkId) => {
+        if (state.circuits[key].essential) {
+          document.getElementById(chkId).checked = true;
+          return true;
+        }
+        return document.getElementById(chkId).checked;
+      };
+      state.circuits.ac.active = forceOn('ac', 'chk-ac');
+      state.circuits.av.active = forceOn('av', 'chk-av');
+      state.circuits.light.active = forceOn('light', 'chk-light');
+      state.circuits.cold.active = forceOn('cold', 'chk-cold');
 
       // Strikethrough visual
       document.getElementById('item-sanctuary-ac').classList.toggle('shedded', !state.circuits.ac.active);
@@ -1824,7 +1980,7 @@
       const btn = document.getElementById('btnShedLoads');
 
       if (state.ecoModeActive) {
-        document.getElementById('chk-ac').checked = false;
+        if (!state.circuits.ac.essential) document.getElementById('chk-ac').checked = false;
         btn.innerText = "↩ Restore Full Power";
         btn.classList.remove('btn-gold');
         btn.classList.add('btn-emerald');
@@ -1843,8 +1999,8 @@
       state.chargePriority = !state.chargePriority;
       const btn = document.getElementById('btnPrioritizeCharge');
       if (state.chargePriority) {
-        document.getElementById('chk-ac').checked = false;
-        document.getElementById('chk-av').checked = false;
+        if (!state.circuits.ac.essential) document.getElementById('chk-ac').checked = false;
+        if (!state.circuits.av.essential) document.getElementById('chk-av').checked = false;
         document.getElementById('chk-light').checked = true;
         document.getElementById('chk-cold').checked = true;
         if (btn) { btn.innerText = '↩ Restore Loads'; btn.classList.remove('btn-secondary'); btn.classList.add('btn-gold'); }
