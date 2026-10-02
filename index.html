@@ -1198,8 +1198,22 @@
         <div style="background: var(--bg-surface-elevated); padding: 1rem; border-radius: var(--radius-md); border-left: 3px solid var(--energy-emerald); margin-bottom: 1.25rem;">
           <div style="font-size: 0.8rem; color: var(--text-muted);">Estimated Financial Savings</div>
           <div style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: #34D399;" id="nairaSavings">
-            ₦322,400 <span style="font-size: 0.8rem; color: var(--text-muted);">(@ ₦1,300/L diesel)</span>
+            ₦0
           </div>
+          <label style="font-size:.8rem; color: var(--text-muted);">Diesel price ₦/L
+            <input id="dieselPrice" type="number" value="1300" min="500" max="3000" step="10" style="width: 110px; margin-left:.4rem; padding:.35rem .5rem; border-radius:8px; border:1px solid var(--border-subtle); background: var(--bg-surface); color: var(--text-main);" oninput="updateSavings(true)">
+          </label>
+          <div style="font-size:.75rem; color: var(--text-dim);">Live: litres = solar kWh ÷ 3.2 • ₦ = litres × price</div>
+        </div>
+
+        <!-- Phase 5: 24-point history chart (free, no library) -->
+        <div style="background: var(--bg-surface-elevated); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom:.4rem;">Recent power history <span style="opacity:.6">(solar gold vs load blue)</span></div>
+          <svg id="historyChart" width="100%" height="90" viewBox="0 0 120 90" preserveAspectRatio="none" role="img" aria-label="Recent solar versus load history chart">
+            <polyline id="histSolar" fill="none" stroke="#F59E0B" stroke-width="2" points=""/>
+            <polyline id="histLoad" fill="none" stroke="#60A5FA" stroke-width="2" points=""/>
+          </svg>
+          <div style="font-size:.75rem; color: var(--text-dim);" id="historyLabel">Collecting live samples…</div>
         </div>
 
         <div style="background: var(--bg-surface-elevated); padding: 1rem; border-radius: var(--radius-md); border-left: 3px solid var(--generator-amber); margin-bottom: 1.25rem;">
@@ -1254,6 +1268,10 @@
       activeServiceMode: 'normal',
       reserveFloor: 15,       // Phase 3: adjustable reserve (15 default, 30 when Reserve-for-Sunday on)
       chargePriority: false,  // Phase 3: prioritize solar charging flag
+      solarKwhToday: 0,       // Phase 5: accumulated solar energy this session
+      genHoursAvoidedNum: 0,  // Phase 5: hours generator did NOT need to run
+      histSolar: [],          // Phase 5: recent solar samples (max 60)
+      histLoad: [],           // Phase 5: recent load samples (max 60)
       circuits: {
         ac:    { name: "Main Sanctuary Air Conditioning", load: 3.10, active: true },
         av:    { name: "Audio / Visual & Production",     load: 1.80, active: true },
@@ -1839,8 +1857,67 @@
       // 5. Update Power Flow Direction Indicators (Task 1.2)
       updateFlowIndicators(currentSolar, currentLoad, netDeficit, netSurplus);
 
+      // Phase 5 — accumulate live savings + history (2s tick = 2/3600 h)
+      try {
+        const _dtH = 2 / 3600;
+        state.solarKwhToday += Math.max(0, currentSolar) * _dtH;
+        const _genRunning = (state.batterySoC < 15 && currentSolar < 1);
+        if (!_genRunning) state.genHoursAvoidedNum += _dtH;
+        state.histSolar.push(currentSolar);
+        state.histLoad.push(currentLoad);
+        if (state.histSolar.length > 60) state.histSolar.shift();
+        if (state.histLoad.length > 60) state.histLoad.shift();
+        updateSavings(false);
+        drawHistory();
+      } catch (err) {}
+
       // 6. Update Prescriptive Advisory Banner based on AI heuristic
       updateAdvisory(currentSolar, currentLoad, estHours);
+    }
+
+    // ----- Phase 5: live mission-money engine (free, transparent math) -----
+    function updateSavings(fromInput) {
+      try {
+        const priceEl = document.getElementById('dieselPrice');
+        const price = priceEl ? (parseFloat(priceEl.value) || 1300) : 1300;
+        const litres = state.solarKwhToday / 3.2;
+        const ngn = litres * price;
+        const packs = Math.floor(ngn / 4500);
+        document.getElementById('dieselLitres').innerText = litres < 10 ? litres.toFixed(2) : Math.round(litres);
+        document.getElementById('nairaSavings').innerText = '₦' + Math.round(ngn).toLocaleString('en-NG');
+        document.getElementById('genHoursAvoided').innerText =
+          state.genHoursAvoidedNum < 1
+            ? Math.round(state.genHoursAvoidedNum * 60) + ' gen-minutes avoided'
+            : state.genHoursAvoidedNum.toFixed(1) + ' run-hours avoided';
+        const maint = document.getElementById('genMaintenanceSaved');
+        if (maint) {
+          const oil = Math.floor(state.genHoursAvoidedNum / 100);
+          maint.innerText = oil > 0
+            ? '~' + oil + ' oil change(s) deferred • ₦' + (oil * 22500).toLocaleString('en-NG') + ' maintenance saved'
+            : 'Every quiet hour saves fuel, noise, and engine wear';
+        }
+        const wp = document.getElementById('welfarePacks');
+        if (wp) wp.innerText = packs;
+        if (fromInput) drawHistory();
+      } catch (err) {}
+    }
+
+    // ----- Phase 5: tiny SVG history chart (no library, free) -----
+    function drawHistory() {
+      try {
+        const s = state.histSolar, l = state.histLoad;
+        if (!s.length) return;
+        const max = Math.max(1, ...s, ...l);
+        const pts = (arr) => arr.map((v, i) => {
+          const x = (i / 59) * 120;
+          const y = 85 - (v / max) * 75;
+          return x.toFixed(1) + ',' + y.toFixed(1);
+        }).join(' ');
+        document.getElementById('histSolar').setAttribute('points', pts(s));
+        document.getElementById('histLoad').setAttribute('points', pts(l));
+        document.getElementById('historyLabel').innerText =
+          s.length + ' live samples • peak ' + max.toFixed(1) + ' kW';
+      } catch (err) {}
     }
 
     // ----- Power Flow Direction Indicators (Task 1.2) -----
@@ -2043,18 +2120,28 @@
       }
     }
 
-    // ----- Export Mock Audit CSV (Browser File Generation) -----
+    // ----- Phase 5: real audit export (header + live history rows) -----
     function exportEnergyAudit() {
       const facility = document.getElementById('facilitySelect').value;
       const mode = state.activeServiceMode;
-      const csvData = [
-        ["Timestamp", "Facility", "Service_Mode", "Solar_kW", "Battery_SoC", "Battery_SoH", "Battery_Temp_C", "Load_kW", "Generator_kW", "Net_Flow", "Diesel_Litres_Saved"],
-        [new Date().toISOString(), facility, mode, document.getElementById('solarVal').innerText, state.batterySoC + "%", state.batterySoH + "%", Math.round(state.batteryTemp), document.getElementById('facilityLoadVal').innerText, document.getElementById('genVal').innerText, "Solar Primary", "248"],
-        [new Date(Date.now() - 3600000).toISOString(), facility, mode, "7.95", "74%", "98.5%", "30", "6.80", "0.00", "Solar Primary", "245"],
-        [new Date(Date.now() - 7200000).toISOString(), facility, mode, "6.50", "69%", "98.5%", "29", "6.50", "0.00", "Solar Balanced", "240"],
-        [new Date(Date.now() - 10800000).toISOString(), facility, mode, "4.20", "63%", "98.5%", "28", "5.80", "0.00", "Battery Supplementing", "234"],
-        [new Date(Date.now() - 14400000).toISOString(), facility, mode, "2.10", "58%", "98.4%", "27", "5.50", "0.00", "Battery Primary", "228"]
-      ].map(e => e.join(",")).join("\n");
+      const role = (localStorage.getItem('sachib_role') || 'admin');
+      const price = (document.getElementById('dieselPrice') || {}).value || 1300;
+      const litres = state.solarKwhToday / 3.2;
+      const lines = [];
+      lines.push('# SACHIB Energy audit export');
+      lines.push('# Date,' + new Date().toISOString());
+      lines.push('# Facility,' + facility);
+      lines.push('# Role,' + role);
+      lines.push('# Service mode,' + mode);
+      lines.push('# Diesel price NGN/L,' + price);
+      lines.push('# Session solar kWh,' + state.solarKwhToday.toFixed(3));
+      lines.push('# Session litres saved,' + litres.toFixed(3));
+      lines.push('sample_index,solar_kW,load_kW');
+      const n = Math.max(state.histSolar.length, 1);
+      for (let i = 0; i < n; i++) {
+        lines.push(i + ',' + (state.histSolar[i] ?? '') + ',' + (state.histLoad[i] ?? ''));
+      }
+      const csvData = lines.join('\n');
 
       const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
