@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SACHIB Energy — Intelligent Church Energy Dashboard</title>
   <meta name="description" content="AI-powered solar energy intelligence and remote monitoring platform for churches, institutions, and member businesses. Monitor, predict, and optimize your energy.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -38,8 +39,19 @@
       --radius-sm: 8px;
       --radius-md: 14px;
       --radius-lg: 20px;
+      --radius-full: 9999px;
 
       --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.5);
+      --shadow-glow-solar: 0 0 25px rgba(245, 158, 11, 0.3);
+      --shadow-glow-emerald: 0 0 25px rgba(16, 185, 129, 0.25);
+    }
+
+    /* Phase 1 — accessibility: visible focus + reduced motion + skip link */
+    :focus-visible { outline: 2px solid var(--solar-gold); outline-offset: 2px; }
+    .skip-link { position: absolute; left: -9999px; top: 0; background: var(--solar-gold); color: #060A10; padding: 0.6rem 1rem; border-radius: 0 0 8px 0; font-weight: 700; z-index: 50; }
+    .skip-link:focus { left: 0; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
 
     * {
@@ -113,13 +125,14 @@
     .brand-logo-icon {
       width: 44px;
       height: 44px;
-      background: linear-gradient(135deg, var(--solar-gold), #B45309);
+      background: #0C1322;
+      border: 1px solid rgba(245, 158, 11, 0.4);
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.4rem;
       box-shadow: 0 0 20px var(--solar-glow);
+      overflow: hidden;
     }
 
     .brand-name {
@@ -843,6 +856,7 @@
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#advisoryBanner">Skip to energy advisory</a>
   <div class="ambient-glow"></div>
   <div class="ambient-glow-left"></div>
 
@@ -850,9 +864,18 @@
     <!-- Top Navigation Header -->
     <header>
       <div class="brand-group">
-        <div class="brand-logo-icon">☀️</div>
+        <div class="brand-logo-icon" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-label="SACHIB Energy logo">
+            <circle cx="16" cy="14" r="5.2" fill="#F59E0B"/>
+            <g stroke="#F59E0B" stroke-width="1.6" stroke-linecap="round">
+              <path d="M16 5.5v2M8.5 8.5l1.4 1.4M23.5 8.5l-1.4 1.4M6 14h2M24 14h2"/>
+            </g>
+            <path d="M8 20L16 13l8 7" stroke="#F8FAFC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M11 19.5V24h10v-4.5" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <div>
-          <div class="brand-name">SACHIB ENERGY</div>
+          <div class="brand-name">SACHIB <span style="color: var(--solar-gold); font-weight: 500; letter-spacing: 0.18em; font-size: 1rem;">ENERGY</span></div>
           <div class="brand-tagline">"Light in every dwelling." — Exodus 10:23</div>
         </div>
       </div>
@@ -1034,28 +1057,28 @@
         <!-- Church Service Mode Presets -->
         <div class="section-eyebrow">Church Service Mode Presets</div>
         <div class="section-heading" style="margin-bottom: 0.75rem;">One-Touch Operational Profiles</div>
-        <div class="mode-presets-grid" id="modePresetsGrid">
-          <div class="mode-card" onclick="setServiceMode('normal')" id="mode-normal">
+        <div class="mode-presets-grid" id="modePresetsGrid" role="group" aria-label="Service mode presets">
+          <div class="mode-card" onclick="setServiceMode('normal')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setServiceMode('normal')}" tabindex="0" role="button" aria-pressed="true" aria-label="Normal operations mode" id="mode-normal">
             <div class="mode-icon">🔄</div>
             <div class="mode-label">Normal Ops</div>
             <div class="mode-desc">Balanced load</div>
           </div>
-          <div class="mode-card" onclick="setServiceMode('sunday')" id="mode-sunday">
+          <div class="mode-card" onclick="setServiceMode('sunday')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setServiceMode('sunday')}" tabindex="0" role="button" aria-pressed="false" aria-label="Sunday service mode" id="mode-sunday">
             <div class="mode-icon">⛪</div>
             <div class="mode-label">Sunday Service</div>
             <div class="mode-desc">Full A/C, AV, Lights</div>
           </div>
-          <div class="mode-card" onclick="setServiceMode('vigil')" id="mode-vigil">
+          <div class="mode-card" onclick="setServiceMode('vigil')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setServiceMode('vigil')}" tabindex="0" role="button" aria-pressed="false" aria-label="Night vigil battery conservation mode" id="mode-vigil">
             <div class="mode-icon">🌙</div>
             <div class="mode-label">Night Vigil</div>
             <div class="mode-desc">Battery conservation</div>
           </div>
-          <div class="mode-card" onclick="setServiceMode('midweek')" id="mode-midweek">
+          <div class="mode-card" onclick="setServiceMode('midweek')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setServiceMode('midweek')}" tabindex="0" role="button" aria-pressed="false" aria-label="Midweek fellowship mode" id="mode-midweek">
             <div class="mode-icon">🤝</div>
             <div class="mode-label">Midweek Fellowship</div>
             <div class="mode-desc">Zoned chapel only</div>
           </div>
-          <div class="mode-card" onclick="setServiceMode('admin')" id="mode-admin">
+          <div class="mode-card" onclick="setServiceMode('admin')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setServiceMode('admin')}" tabindex="0" role="button" aria-pressed="false" aria-label="Admin office low-power mode" id="mode-admin">
             <div class="mode-icon">💻</div>
             <div class="mode-label">Admin / Office</div>
             <div class="mode-desc">Low-power weekday</div>
@@ -1205,6 +1228,51 @@
       }
     };
 
+    // ----- Phase 2: TelemetryAdapter (ADR-3) — mock now, real inverter later -----
+    // All reads go through TelemetryAdapter.read() so a Modbus/MQTT adapter
+    // can replace MockInverter without UI changes. Free-tier: no backend.
+    const BATTERY_CUTOFF_SOC = 15; // % — reserve floor, depletion = time to cutoff
+    const TelemetryAdapter = {
+      source: 'MockInverter-v1',
+      read() {
+        const diurnal = (typeof getDiurnalFactor === 'function') ? getDiurnalFactor() : 1;
+        const effSun = state.cloudSimulated ? state.sunFactor : Math.max(0, diurnal * state.sunFactor);
+        return {
+          ts: Date.now(),
+          solarKw: +(state.solarMaxKw * effSun).toFixed(2),
+          batterySoC: state.batterySoC,
+          loadKw: Object.values(state.circuits).reduce((s, c) => s + (c.active ? c.load : 0), 0),
+          irradiance: Math.round(890 * effSun),
+          temp: +state.batteryTemp.toFixed(1)
+        };
+      }
+    };
+
+    // ----- Phase 2: best-effort offline telemetry log (IndexedDB, free, optional) -----
+    const TelemetryLog = {
+      db: null,
+      init() {
+        try {
+          if (!('indexedDB' in window)) return;
+          const req = indexedDB.open('sachib.energy.v1', 1);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('telemetry')) db.createObjectStore('telemetry', { keyPath: 'ts' });
+          };
+          req.onsuccess = (e) => { TelemetryLog.db = e.target.result; };
+          req.onerror = () => { TelemetryLog.db = null; };
+        } catch (err) { TelemetryLog.db = null; }
+      },
+      append(sample) {
+        try {
+          if (!TelemetryLog.db) return;
+          // 1-min rollup only: skip if last sample < 55s ago (keeps free-tier storage tiny)
+          const tx = TelemetryLog.db.transaction('telemetry', 'readwrite');
+          tx.objectStore('telemetry').put(sample);
+        } catch (err) { /* silent — pilot must never break on storage */ }
+      }
+    };
+
     // ----- Service Mode Presets (PRD Section 8 & 9) -----
     const serviceModes = {
       normal: {
@@ -1274,6 +1342,7 @@
 
       recalculateEnergy();
       updateSystemClock();
+      TelemetryLog.init();
 
       // Start live telemetry heartbeat (every 2 seconds)
       setInterval(telemetryHeartbeat, 2000);
@@ -1311,8 +1380,44 @@
       // Battery temperature simulation
       state.batteryTemp = Math.max(25, Math.min(45, state.batteryTemp + batteryTempJitter));
 
+      // Phase 2 — living SoC drift: surplus charges, deficit discharges (2s tick)
+      // dE(kWh) = (solar - load) * (2/3600); dSoC% = dE / capacity * 100
+      try {
+        const _eff = (state._effectiveSunFactor !== undefined) ? state._effectiveSunFactor : state.sunFactor;
+        const _sol = Math.max(0, state.solarMaxKw * _eff + solarJitter);
+        let _ld = 0;
+        for (const _k in state.circuits) { if (state.circuits[_k].active) _ld += state.circuits[_k].load; }
+        const _dE = (_sol - _ld) * (2 / 3600);
+        const _dSoC = (_dE / state.batteryCapacityKwh) * 100;
+        // clamp: never below cutoff via drift alone (gen takes over), never above 100
+        state.batterySoC = Math.min(100, Math.max(BATTERY_CUTOFF_SOC, state.batterySoC + _dSoC));
+        // SoH micro-degrade + cycle count: +1 cycle per full 100% throughput (approx)
+        state._throughput = (state._throughput || 0) + Math.abs(_dE);
+        if (state._throughput >= state.batteryCapacityKwh) {
+          state._throughput = 0;
+          state.batteryCycles += 1;
+          state.batterySoH = Math.max(80, state.batterySoH - 0.002);
+        }
+        // sync slider readout
+        const _socSlider = document.getElementById('socSlider');
+        if (_socSlider && document.activeElement !== _socSlider) {
+          _socSlider.value = Math.round(state.batterySoC);
+          document.getElementById('socSliderVal').innerText = Math.round(state.batterySoC) + '%';
+        }
+      } catch (err) { /* drift must never break heartbeat */ }
+
       // Recalculate with jitter
       recalculateEnergy(solarJitter);
+
+      // Best-effort 1-min rollup to IndexedDB
+      try {
+        const _now = Date.now();
+        if (!telemetryHeartbeat._lastLog || (_now - telemetryHeartbeat._lastLog) > 55000) {
+          telemetryHeartbeat._lastLog = _now;
+          const s = TelemetryAdapter.read();
+          TelemetryLog.append(s);
+        }
+      } catch (err) {}
     }
 
     // ----- Facility Switcher -----
@@ -1358,10 +1463,10 @@
       document.getElementById('chk-light').checked = preset.circuits.light;
       document.getElementById('chk-cold').checked = preset.circuits.cold;
 
-      // Update mode card highlights
-      document.querySelectorAll('.mode-card').forEach(card => card.classList.remove('mode-active'));
+      // Update mode card highlights + a11y pressed state
+      document.querySelectorAll('.mode-card').forEach(card => { card.classList.remove('mode-active'); card.setAttribute('aria-pressed', 'false'); });
       const activeCard = document.getElementById('mode-' + mode);
-      if (activeCard) activeCard.classList.add('mode-active');
+      if (activeCard) { activeCard.classList.add('mode-active'); activeCard.setAttribute('aria-pressed', 'true'); }
 
       // Update internal state
       state.circuits.ac.active = preset.circuits.ac;
@@ -1458,7 +1563,7 @@
       // 3. Battery State & Runtime Projection
       document.getElementById('batteryVal').innerText = state.batterySoC + "%";
 
-      const usableKwh = (state.batterySoC / 100) * state.batteryCapacityKwh;
+      const usableKwh = (Math.max(0, state.batterySoC - BATTERY_CUTOFF_SOC) / 100) * state.batteryCapacityKwh;
       const netDeficit = Math.max(0, currentLoad - currentSolar);
       const netSurplus = Math.max(0, currentSolar - currentLoad);
 
@@ -1479,7 +1584,7 @@
         const now = new Date();
         const depletionDate = new Date(now.getTime() + estMinutes * 60000);
         depletionTimeStr = depletionDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        depletionDetail = `At current ${netDeficit.toFixed(2)} kW deficit, battery reaches 0% at ${depletionTimeStr}`;
+        depletionDetail = `At current ${netDeficit.toFixed(2)} kW deficit, battery reaches ${BATTERY_CUTOFF_SOC}% cutoff at ${depletionTimeStr}`;
 
         // Style depletion display based on urgency
         const depEl = document.getElementById('depletionTimeline');
