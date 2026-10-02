@@ -852,6 +852,13 @@
       .flow-direction-bar {
         gap: 0.75rem;
       }
+      /* Phase 6 — phone friendly: big touch targets, stacked flow, sticky advice */
+      .power-grid-nodes { grid-template-columns: 1fr; }
+      .flow-direction-bar { flex-direction: column; align-items: stretch; }
+      .advisory-card { position: sticky; top: 0; z-index: 20; }
+      .btn, .mode-card, .select-facility, .select-mode { min-height: 44px; }
+      .advisory-actions .btn { width: 100%; margin-bottom: .4rem; }
+      .layout-wrapper { padding: 1rem; }
     }
   </style>
 </head>
@@ -915,9 +922,12 @@
     <!-- System Clock & Telemetry Status Bar -->
     <div class="system-clock-bar" id="systemClockBar">
       <div class="clock-item">
-        <div class="live-indicator"></div>
-        <span>LIVE TELEMETRY</span>
+        <div class="live-indicator" id="liveDot"></div>
+        <span id="liveLabel">LIVE TELEMETRY</span>
         <span class="clock-value" id="systemClock">--:--:--</span>
+      </div>
+      <div class="clock-item" id="offlineBadge" style="display:none; color: var(--solar-gold);">
+        <span>OFFLINE • showing saved data — sliders still work</span>
       </div>
       <div class="clock-item">
         <span>SOLAR TIME:</span>
@@ -1237,7 +1247,7 @@
 
     <!-- Footer -->
     <footer>
-      <p><strong>SACHIB Energy</strong> • Intelligent Church Energy Solution • Phase 1 Build</p>
+      <p><strong>SACHIB Energy</strong> • Intelligent Church Energy Solution • <span id="appVersion">v0.1-pilot</span></p>
       <p style="margin-top: 0.4rem;">
         Works 100% locally with browser mock state •
         <a href="design.html">Design Tokens</a> • <a href="PRD.md">PRD Specification</a>
@@ -1521,6 +1531,22 @@
       updateSystemClock();
       TelemetryLog.init();
       applyRole();
+      // Phase 6 — offline badge (free, no server). Sliders keep working offline.
+      try {
+        const setOnline = () => {
+          const off = document.getElementById('offlineBadge');
+          if (off) off.style.display = navigator.onLine ? 'none' : 'block';
+          const lbl = document.getElementById('liveLabel');
+          if (lbl) lbl.innerText = navigator.onLine ? 'LIVE TELEMETRY' : 'SAVED TELEMETRY';
+        };
+        window.addEventListener('online', setOnline);
+        window.addEventListener('offline', setOnline);
+        setOnline();
+        // Service worker for offline cache (works on https/localhost, silent on file://)
+        if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
+          navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+      } catch (err) {}
 
       // Start live telemetry heartbeat (every 2 seconds)
       setInterval(telemetryHeartbeat, 2000);
