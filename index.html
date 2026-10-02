@@ -943,12 +943,21 @@
           <button class="btn btn-gold" id="btnShedLoads" onclick="toggleEcoMode()">
             ⚡ Apply Eco-Shedding (Save 3.1 kW)
           </button>
+          <button class="btn btn-secondary" id="btnPrioritizeCharge" onclick="prioritizeCharge()" title="Shed all non-essential loads to maximize solar charging">
+            ☀️ Prioritize Solar Charging
+          </button>
+          <button class="btn btn-secondary" id="btnReserveSunday" onclick="reserveSunday()" title="Raise battery reserve floor to 30% for Sunday morning service">
+            🛡️ Reserve 30% for Sunday
+          </button>
           <button class="btn btn-secondary" id="btnSimulateCloud" onclick="simulateCloudEvent()">
             ⛅ Simulate Heavy Overcast
           </button>
           <button class="btn btn-secondary" onclick="exportEnergyAudit()">
             📥 Export Energy Audit (CSV)
           </button>
+        </div>
+        <div class="advisory-text" id="nextServiceLine" style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
+          Next service: <strong id="nextServiceName">—</strong> in <strong id="nextServiceIn">—</strong> • Runtime buffer: <strong id="runtimeBuffer">—</strong>
         </div>
       </div>
     </section>
@@ -1043,10 +1052,13 @@
       </div>
 
       <!-- Battery Depletion Time Forecast -->
-      <div class="depletion-timeline" id="depletionTimeline">
-        <div class="depletion-label">Projected Battery Depletion Time</div>
+      <div class="depletion-timeline" id="depletionTimeline" title="Formula: Net Deficit = Load − Solar; Runtime = Usable kWh ÷ Net Deficit; Usable = (SoC − reserve floor)% × 28.8 kWh">
+        <div class="depletion-label">Projected Battery Depletion Time <span style="opacity:.6">(hover for formula)</span></div>
         <div class="depletion-time" id="depletionTime">—</div>
         <div class="depletion-detail" id="depletionDetail">Calculating from live telemetry...</div>
+        <div style="height: 8px; border-radius: var(--radius-full); background: rgba(255,255,255,.08); margin-top: .6rem; overflow: hidden;" aria-hidden="true">
+          <div id="depletionBar" style="height: 100%; width: 70%; border-radius: var(--radius-full); background: var(--battery-cyan); transition: width .5s ease;"></div>
+        </div>
       </div>
     </section>
 
@@ -1220,6 +1232,8 @@
       dieselKwhPerLitre: 3.2,
       heartbeatCount: 0,
       activeServiceMode: 'normal',
+      reserveFloor: 15,       // Phase 3: adjustable reserve (15 default, 30 when Reserve-for-Sunday on)
+      chargePriority: false,  // Phase 3: prioritize solar charging flag
       circuits: {
         ac:    { name: "Main Sanctuary Air Conditioning", load: 3.10, active: true },
         av:    { name: "Audio / Visual & Production",     load: 1.80, active: true },
@@ -1232,6 +1246,7 @@
     // All reads go through TelemetryAdapter.read() so a Modbus/MQTT adapter
     // can replace MockInverter without UI changes. Free-tier: no backend.
     const BATTERY_CUTOFF_SOC = 15; // % — reserve floor, depletion = time to cutoff
+    const stateReserveDefault = 15;
     const TelemetryAdapter = {
       source: 'MockInverter-v1',
       read() {
@@ -1389,8 +1404,8 @@
         for (const _k in state.circuits) { if (state.circuits[_k].active) _ld += state.circuits[_k].load; }
         const _dE = (_sol - _ld) * (2 / 3600);
         const _dSoC = (_dE / state.batteryCapacityKwh) * 100;
-        // clamp: never below cutoff via drift alone (gen takes over), never above 100
-        state.batterySoC = Math.min(100, Math.max(BATTERY_CUTOFF_SOC, state.batterySoC + _dSoC));
+        // clamp: never below reserve floor via drift alone (gen takes over), never above 100
+        state.batterySoC = Math.min(100, Math.max(state.reserveFloor || BATTERY_CUTOFF_SOC, state.batterySoC + _dSoC));
         // SoH micro-degrade + cycle count: +1 cycle per full 100% throughput (approx)
         state._throughput = (state._throughput || 0) + Math.abs(_dE);
         if (state._throughput >= state.batteryCapacityKwh) {
@@ -1563,7 +1578,8 @@
       // 3. Battery State & Runtime Projection
       document.getElementById('batteryVal').innerText = state.batterySoC + "%";
 
-      const usableKwh = (Math.max(0, state.batterySoC - BATTERY_CUTOFF_SOC) / 100) * state.batteryCapacityKwh;
+      const effectiveFloor = state.reserveFloor || BATTERY_CUTOFF_SOC;
+      const usableKwh = (Math.max(0, state.batterySoC - effectiveFloor) / 100) * state.batteryCapacityKwh;
       const netDeficit = Math.max(0, currentLoad - currentSolar);
       const netSurplus = Math.max(0, currentSolar - currentLoad);
 
@@ -1584,7 +1600,7 @@
         const now = new Date();
         const depletionDate = new Date(now.getTime() + estMinutes * 60000);
         depletionTimeStr = depletionDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        depletionDetail = `At current ${netDeficit.toFixed(2)} kW deficit, battery reaches ${BATTERY_CUTOFF_SOC}% cutoff at ${depletionTimeStr}`;
+        depletionDetail = `At current ${netDeficit.toFixed(2)} kW deficit, battery reaches ${effectiveFloor}% cutoff at ${depletionTimeStr}`;
 
         // Style depletion display based on urgency
         const depEl = document.getElementById('depletionTimeline');
@@ -1610,6 +1626,35 @@
 
       document.getElementById('depletionTime').innerText = depletionTimeStr;
       document.getElementById('depletionDetail').innerText = depletionDetail;
+
+      // Phase 3 — depletion bar: usable fraction remaining (0–100%)
+      try {
+        const _frac = Math.max(0, Math.min(1, (state.batterySoC - effectiveFloor) / (100 - effectiveFloor)));
+        const _bar = document.getElementById('depletionBar');
+        if (_bar) {
+          _bar.style.width = Math.round(_frac * 100) + '%';
+          _bar.style.background = (netDeficit <= 0) ? 'var(--energy-emerald)'
+            : (estHours < 3) ? 'var(--alert-crimson)'
+            : (estHours < 8) ? 'var(--solar-gold)' : 'var(--battery-cyan)';
+        }
+      } catch (err) {}
+
+      // Phase 3 — next-service buffer line
+      try {
+        const _ns = getNextService();
+        const _buf = (netDeficit > 0) ? (estHours - _ns.inHours) : 99;
+        document.getElementById('nextServiceName').innerText = _ns.name;
+        document.getElementById('nextServiceIn').innerText = _ns.label;
+        const _bEl = document.getElementById('runtimeBuffer');
+        if (_bEl) {
+          _bEl.innerText = (netDeficit <= 0) ? ('+' + _ns.label + ' surplus')
+            : ((_buf >= 2 ? '+' : '') + _buf.toFixed(1) + 'h vs service');
+          _bEl.style.color = (_buf >= 2 || netDeficit <= 0) ? '#34D399' : (_buf >= 0 ? 'var(--solar-gold)' : '#F87171');
+        }
+        // stash for advisory tiers
+        recalculateEnergy._buffer = _buf;
+        recalculateEnergy._nextService = _ns;
+      } catch (err) {}
 
       // Battery diagnostics
       const voltageAdjust = 48 + (state.batterySoC / 100) * 6;  // 48V–54V range
@@ -1686,6 +1731,33 @@
       }
     }
 
+    // ----- Phase 3: Next-service estimator (drives red/yellow/green tiers) -----
+    // Rule-based weekly schedule: Sun 09:00 Service, Wed 18:00 Fellowship,
+    // Fri 23:00 Vigil, weekdays 09:00 Admin. Returns soonest upcoming.
+    function getNextService() {
+      const now = new Date();
+      const candidates = [];
+      const push = (day, h, min, name) => {
+        const d = new Date(now);
+        let delta = (day - now.getDay() + 7) % 7;
+        d.setDate(now.getDate() + delta);
+        d.setHours(h, min, 0, 0);
+        if (d <= now) d.setDate(d.getDate() + 7);
+        candidates.push({ date: d, name });
+      };
+      push(0, 9, 0, 'Sunday Service');
+      push(3, 18, 0, 'Midweek Fellowship');
+      push(5, 23, 0, 'Night Vigil');
+      push(1, 9, 0, 'Admin / Office');
+      push(2, 9, 0, 'Admin / Office');
+      push(4, 9, 0, 'Admin / Office');
+      candidates.sort((a, b) => a.date - b.date);
+      const next = candidates[0];
+      const inHours = (next.date - now) / 3600000;
+      const h = Math.floor(inHours), m = Math.round((inHours - h) * 60);
+      return { name: next.name, date: next.date, inHours, label: h + 'h ' + m + 'm' };
+    }
+
     // ----- Multi-Tier Prescriptive Advisory Engine (Task 2.2) -----
     function updateAdvisory(solar, load, hours) {
       const banner = document.getElementById('advisoryBanner');
@@ -1702,7 +1774,13 @@
       // Remove all variant classes
       banner.classList.remove('advisory-critical', 'advisory-optimal');
 
-      if (state.batterySoC < 20 || (hours > 0 && hours < 3)) {
+      // Phase 3 tiers: buffer = runtime − hours-until-next-service
+      const _buf = (typeof recalculateEnergy._buffer === 'number') ? recalculateEnergy._buffer : 99;
+      const _ns = recalculateEnergy._nextService || { name: 'next service', label: '' };
+      const _crit = (state.batterySoC < 20 || (hours > 0 && hours < 3) || _buf < 0);
+      const _warn = !_crit && (state.batterySoC < 40 || (hours > 0 && hours < 6) || _buf < 2);
+
+      if (_crit) {
         // 🔴 CRITICAL
         banner.classList.add('advisory-critical');
         badge.innerText = "CRITICAL ADVISORY • ACTION REQUIRED";
@@ -1710,15 +1788,15 @@
         iconWrapper.style.background = "rgba(239, 68, 68, 0.2)";
         iconWrapper.style.borderColor = "rgba(239, 68, 68, 0.5)";
         heading.innerText = "Severe Battery Depletion Risk";
-        msg.innerHTML = `⚠️ High facility demand (<strong>${load} kW</strong>) with battery at <strong>${state.batterySoC}%</strong> will deplete reserves within <strong>${hours} hours</strong>. Generator auto-start will be triggered unless non-essential circuits are shed immediately. Switch to <strong>Night Vigil</strong> or <strong>Admin Mode</strong> to extend battery life.`;
-      } else if (state.batterySoC < 40 || (hours > 0 && hours < 6)) {
+        msg.innerHTML = `⚠️ High facility demand (<strong>${load} kW</strong>) with battery at <strong>${state.batterySoC}%</strong> will deplete reserves within <strong>${hours} hours</strong> — before <strong>${_ns.name}</strong> (in ${_ns.label}). Generator auto-start will trigger unless non-essential circuits are shed now. Use <strong>Eco-Shedding</strong>, <strong>Prioritize Charging</strong>, or switch to <strong>Night Vigil</strong>.`;
+      } else if (_warn) {
         // 🟡 CAUTIONARY
         badge.innerText = "AI PREDICTIVE NOTICE • CAUTION";
         badge.style.background = "#F59E0B";
         iconWrapper.style.background = "rgba(245, 158, 11, 0.2)";
         iconWrapper.style.borderColor = "rgba(245, 158, 11, 0.5)";
         heading.innerText = "Anticipated Evening Deficit Warning";
-        msg.innerHTML = `Current facility load is <strong>${load} kW</strong> with battery at <strong>${state.batterySoC}%</strong>. At the current draw rate, battery reserves may deplete within <strong>${hours} hours</strong>. Consider shedding sanctuary A/C (<strong>3.10 kW</strong>) to extend runtime for the evening service.`;
+        msg.innerHTML = `Current load <strong>${load} kW</strong> with battery at <strong>${state.batterySoC}%</strong> leaves <strong>${_buf >= 0 ? '+' : ''}${_buf.toFixed(1)}h</strong> buffer vs <strong>${_ns.name}</strong> (in ${_ns.label}, runtime ${hours}h). Shed sanctuary A/C (<strong>3.10 kW</strong>) or <strong>Prioritize Charging</strong> to protect the service.`;
       } else if (state.ecoModeActive) {
         // 🟢 ECO OPTIMIZED
         banner.classList.add('advisory-optimal');
@@ -1757,6 +1835,39 @@
         btn.classList.add('btn-gold');
       }
       updateCircuits();
+    }
+
+    // ----- Phase 3: Prioritize Solar Charging -----
+    // Sheds A/C + AV, keeps lights + cold (essential). Toggle.
+    function prioritizeCharge() {
+      state.chargePriority = !state.chargePriority;
+      const btn = document.getElementById('btnPrioritizeCharge');
+      if (state.chargePriority) {
+        document.getElementById('chk-ac').checked = false;
+        document.getElementById('chk-av').checked = false;
+        document.getElementById('chk-light').checked = true;
+        document.getElementById('chk-cold').checked = true;
+        if (btn) { btn.innerText = '↩ Restore Loads'; btn.classList.remove('btn-secondary'); btn.classList.add('btn-gold'); }
+      } else {
+        document.getElementById('chk-ac').checked = true;
+        document.getElementById('chk-av').checked = true;
+        if (btn) { btn.innerText = '☀️ Prioritize Solar Charging'; btn.classList.remove('btn-gold'); btn.classList.add('btn-secondary'); }
+      }
+      updateCircuits();
+    }
+
+    // ----- Phase 3: Reserve 30% for Sunday -----
+    // Raises reserve floor 15→30 so depletion math protects Sunday morning.
+    function reserveSunday() {
+      const on = (state.reserveFloor || 15) < 30;
+      state.reserveFloor = on ? 30 : 15;
+      const btn = document.getElementById('btnReserveSunday');
+      if (btn) {
+        btn.innerText = on ? '✅ 30% Reserved (tap to release)' : '🛡️ Reserve 30% for Sunday';
+        btn.classList.toggle('btn-gold', on);
+        btn.classList.toggle('btn-secondary', !on);
+      }
+      recalculateEnergy();
     }
 
     // ----- Weather Simulation -----
