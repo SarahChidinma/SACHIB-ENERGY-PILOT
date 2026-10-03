@@ -1363,6 +1363,31 @@
       <div style="font-size:.78rem; color:var(--text-dim); margin-top:.5rem;">Mock multi-site. Each site keeps its own battery %. Real cloud sync later (still free).</div>
     </section>
 
+    <!-- NEXT: Settings — one place, free, this phone -->
+    <section class="panel" id="settingsPanel" style="margin-bottom: 2rem;">
+      <div class="section-eyebrow">Settings</div>
+      <div class="section-heading" style="margin-bottom: 0.5rem;">Controls</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:.6rem;">
+        <label style="font-size:.82rem;">Diesel ₦/L<br>
+          <input id="setPrice" type="number" value="1300" min="500" max="3000" step="10" style="width:100%; padding:.55rem; border-radius:10px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);" oninput="settingsApply()">
+        </label>
+        <label style="font-size:.82rem;">Battery floor %<br>
+          <select id="setFloor" class="select-mode" style="width:100%;" onchange="settingsApply()">
+            <option value="15">15% (normal)</option>
+            <option value="30">30% (protect Sunday)</option>
+          </select>
+        </label>
+        <label style="font-size:.82rem; display:flex; gap:.5rem; align-items:center;">
+          <input type="checkbox" id="setPreserve" checked onchange="settingsApply()"> Auto-save at 50%
+        </label>
+      </div>
+      <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem;">
+        <button class="btn btn-secondary" style="min-height:44px;" onclick="authSignOut()">⎋ Sign out</button>
+        <button class="btn btn-secondary" style="min-height:44px;" onclick="settingsReset()">🗑 Erase my data on this phone</button>
+      </div>
+      <div style="font-size:.78rem; color:var(--text-dim); margin-top:.5rem;">SACHIB Energy <span id="setVersion">v0.1-pilot</span> • Free pilot • Data stays on this phone • “Light in every dwelling.” — Exodus 10:23</div>
+    </section>
+
     <!-- Footer -->
     <footer>
       <p><strong>SACHIB Energy</strong> • Intelligent Church Energy Solution • <span id="appVersion">v0.1-pilot</span></p>
@@ -2030,6 +2055,45 @@
       } catch (err) {}
     }
 
+    // ----- NEXT: settings — one place controls all (free, local) -----
+    function settingsApply() {
+      try {
+        const p = parseFloat(document.getElementById('setPrice').value) || 1300;
+        const dp = document.getElementById('dieselPrice');
+        if (dp) { dp.value = p; }
+        const f = parseInt(document.getElementById('setFloor').value, 10) || 15;
+        state.reserveFloor = f;
+        const rb = document.getElementById('btnReserveSunday');
+        if (rb) {
+          const on = f >= 30;
+          rb.innerText = on ? '✅ 30% Reserved (tap to release)' : '🛡️ Reserve 30% for Sunday';
+          rb.classList.toggle('btn-gold', on);
+          rb.classList.toggle('btn-secondary', !on);
+        }
+        state.preserve50 = document.getElementById('setPreserve').checked;
+        const cp = document.getElementById('chkPreserve50');
+        if (cp) cp.checked = state.preserve50;
+        localStorage.setItem('sachib_preserve50', state.preserve50 ? 'on' : 'off');
+        recalculateEnergy();
+      } catch (err) {}
+    }
+    function settingsReset() {
+      if (!confirm('Erase all SACHIB data on this phone?')) return;
+      localStorage.clear();
+      location.reload();
+    }
+    function settingsSync() {
+      try {
+        const dp = document.getElementById('dieselPrice');
+        const sp = document.getElementById('setPrice');
+        if (dp && sp && document.activeElement !== sp) sp.value = dp.value;
+        const sf = document.getElementById('setFloor');
+        if (sf) sf.value = String(state.reserveFloor || 15);
+        const sv = document.getElementById('setPreserve');
+        if (sv) sv.checked = !!state.preserve50;
+      } catch (err) {}
+    }
+
     // ----- Initialize -----
     function init() {
       gateViews();
@@ -2437,6 +2501,8 @@
       try { updateAnalytics(currentSolar, currentLoad); } catch (err) {}
       // Remote cards stay fresh (cheap: every calc is fine)
       try { renderRemote(); } catch (err) {}
+      // Settings stay in sync with quick controls
+      try { settingsSync(); } catch (err) {}
 
       // 6. Update Prescriptive Advisory Banner based on AI heuristic
       updateAdvisory(currentSolar, currentLoad, estHours);
