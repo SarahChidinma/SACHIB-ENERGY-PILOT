@@ -1245,6 +1245,22 @@
       </div>
     </div>
 
+    <!-- Phase 7: Smart Load Advisor — what can battery carry? -->
+    <section class="panel" id="smartAdvisor" style="margin-bottom: 2rem;" aria-live="polite">
+      <div class="section-eyebrow">Smart Load Advisor (AI)</div>
+      <div class="section-heading" style="margin-bottom: 0.5rem;">What Can Your Battery Carry?</div>
+      <p style="color: var(--text-muted); font-size: 0.88rem;" id="advisorHealthLine">
+        Checking battery health…
+      </p>
+      <div id="applianceGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; margin: 0.8rem 0;"></div>
+      <div style="font-size: 0.85rem; color: var(--text-muted);" id="detectedLine">Detecting loads…</div>
+      <label style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.7rem; font-size: 0.88rem;">
+        <input type="checkbox" id="chkPreserve50" checked onchange="state.preserve50 = this.checked; recalculateEnergy();">
+        Auto-preserve at 50% — stretch to 2 days (sheds non-essential)
+      </label>
+      <div id="preserveNote" style="font-size: 0.82rem; color: var(--solar-gold); margin-top: 0.3rem;"></div>
+    </section>
+
     <!-- Footer -->
     <footer>
       <p><strong>SACHIB Energy</strong> • Intelligent Church Energy Solution • <span id="appVersion">v0.1-pilot</span></p>
@@ -1456,7 +1472,107 @@
       } catch (err) {}
     }
 
-    // ----- Service Mode Presets (PRD Section 8 & 9) -----
+    // ----- Phase 7: appliance catalog (typical kW, free guide) -----
+    const APPLIANCES = [
+      { name: 'LED Lights (10 bulbs)', kw: 0.10 },
+      { name: 'Ceiling Fan', kw: 0.08 },
+      { name: 'TV + Sound', kw: 0.25 },
+      { name: 'Computer + Printer', kw: 0.35 },
+      { name: 'Fridge (180L)', kw: 0.15 },
+      { name: 'Freezer (300L)', kw: 0.30 },
+      { name: 'Water Pump (1HP)', kw: 0.75 },
+      { name: 'Sanctuary A/C (2HP)', kw: 1.55 }
+    ];
+    state.preserve50 = (localStorage.getItem('sachib_preserve50') !== 'off');
+    state._preserveActive = false;
+    state._lastLoad = null;
+    state._detected = [];
+
+    // Guess which appliances make up the load (simple AI match, free, local)
+    function detectLoads(totalKw) {
+      try {
+        if (state._lastLoad === null) { state._lastLoad = totalKw; return; }
+        const delta = totalKw - state._lastLoad;
+        state._lastLoad = totalKw;
+        if (Math.abs(delta) < 0.05) return;
+        // find closest appliance to |delta|
+        let best = APPLIANCES[0], bestDiff = 99;
+        APPLIANCES.forEach(a => {
+          const d = Math.abs(Math.abs(delta) - a.kw);
+          if (d < bestDiff) { bestDiff = d; best = a; }
+        });
+        if (bestDiff < 0.25) {
+          const action = delta > 0 ? 'ON' : 'OFF';
+          state._detected.unshift(best.name + ' ' + action);
+          if (state._detected.length > 4) state._detected.pop();
+        }
+      } catch (err) {}
+    }
+
+    // Main advisor: health-derated capacity → what fits + 2-day preserve at 50%
+    function updateSmartAdvisor(currentSolar, currentLoad, netDeficit) {
+      try {
+        const effCap = state.batteryCapacityKwh * (state.batterySoH / 100);
+        const floor = state.reserveFloor || 15;
+        const usable = Math.max(0, (state.batterySoC - floor) / 100) * effCap;
+        // health line
+        const hl = document.getElementById('advisorHealthLine');
+        if (hl) hl.innerText = 'Health ' + state.batterySoH.toFixed(1) + '% • Usable now ' + usable.toFixed(1) + ' kWh (of ' + effCap.toFixed(1) + ' kWh) • Battery ' + Math.round(state.batterySoC) + '%';
+        // how many hours each appliance could run alone on usable energy
+        const grid = document.getElementById('applianceGrid');
+        if (grid) {
+          grid.innerHTML = APPLIANCES.map(a => {
+            const hrs = a.kw > 0 ? (usable / a.kw) : 0;
+            const ok = hrs >= 2;
+            return '<div style="padding:.6rem .7rem; border-radius:10px; border:1px solid var(--border-subtle); background:rgba(255,255,255,.02);">'
+              + '<div style="font-size:.82rem; font-weight:600;">' + (ok ? '✅ ' : '⚠️ ') + a.name + '</div>'
+              + '<div style="font-family:var(--font-mono); font-size:.78rem; color:var(--text-muted);">' + a.kw.toFixed(2) + ' kW • ~' + (hrs > 48 ? '48h+' : hrs.toFixed(1) + 'h') + '</div></div>';
+          }).join('');
+        }
+        // detected line
+        detectLoads(currentLoad);
+        const dl = document.getElementById('detectedLine');
+        if (dl) dl.innerText = state._detected.length
+          ? 'Detected: ' + state._detected.join(' • ')
+          : 'Detected: steady load ' + currentLoad.toFixed(2) + ' kW — switch a device to see AI detect it.';
+        // auto-preserve at 50% for 2-day stretch
+        const wantPreserve = state.preserve50 && state.batterySoC <= 50;
+        const note = document.getElementById('preserveNote');
+        if (wantPreserve && !state._preserveActive) {
+          state._preserveActive = true;
+          // shed all non-essential now
+          ['ac', 'av', 'light', 'cold'].forEach(k => {
+            if (!state.circuits[k].essential) state.circuits[k].active = false;
+          });
+          syncCircuitUI();
+          if (note) note.innerText = '🛡️ Auto-preserve ON at 50%: non-essential shed. Essential only (~0.5 kW) can stretch ~2 days. Turn off the toggle above to release.';
+        } else if (!wantPreserve && state._preserveActive && state.batterySoC > 55) {
+          state._preserveActive = false;
+          if (note) note.innerText = '';
+        } else if (state._preserveActive) {
+          if (note && !note.innerText) note.innerText = '🛡️ Auto-preserve ON at 50%: non-essential shed for 2-day stretch.';
+        } else {
+          if (note) note.innerText = state.preserve50
+            ? 'Auto-preserve armed: will act at 50%.'
+            : 'Auto-preserve off.';
+        }
+        localStorage.setItem('sachib_preserve50', state.preserve50 ? 'on' : 'off');
+        const chk = document.getElementById('chkPreserve50');
+        if (chk && chk.checked !== state.preserve50) chk.checked = state.preserve50;
+      } catch (err) {}
+    }
+
+    function syncCircuitUI() {
+      try {
+        const map = { ac: ['chk-ac', 'item-sanctuary-ac'], av: ['chk-av', 'item-av'], light: ['chk-light', 'item-lighting'], cold: ['chk-cold', 'item-cold'] };
+        Object.keys(map).forEach(k => {
+          const [chkId, itemId] = map[k];
+          const on = state.circuits[k].active;
+          document.getElementById(chkId).checked = on;
+          document.getElementById(itemId).classList.toggle('shedded', !on);
+        });
+      } catch (err) {}
+    }
     const serviceModes = {
       normal: {
         label: "NORMAL OPS",
@@ -1896,6 +2012,9 @@
         updateSavings(false);
         drawHistory();
       } catch (err) {}
+
+      // Phase 7 — smart advisor (needs currentSolar/currentLoad/netDeficit)
+      try { updateSmartAdvisor(currentSolar, currentLoad, netDeficit); } catch (err) {}
 
       // 6. Update Prescriptive Advisory Banner based on AI heuristic
       updateAdvisory(currentSolar, currentLoad, estHours);
