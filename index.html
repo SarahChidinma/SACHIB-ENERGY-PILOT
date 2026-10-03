@@ -1388,6 +1388,28 @@
       <div style="font-size:.78rem; color:var(--text-dim); margin-top:.5rem;">SACHIB Energy <span id="setVersion">v0.1-pilot</span> • Free pilot • Data stays on this phone • “Light in every dwelling.” — Exodus 10:23</div>
     </section>
 
+    <!-- NEXT: TEST payment — safe demo, no real money -->
+    <section class="panel" id="payPanel" style="margin-bottom: 2rem; border-color: rgba(245,158,11,.4);">
+      <div class="section-eyebrow">Payment (TEST mode)</div>
+      <div class="section-heading" style="margin-bottom: 0.5rem;">Installation deposit — TEST</div>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">Demo only. <strong>No money moves.</strong> Live Paystack key plugs in later (one line).</p>
+      <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:end;">
+        <label style="font-size:.82rem;">Amount ₦<br>
+          <input id="payAmount" type="number" value="1000" min="100" step="100" style="width:140px; padding:.55rem; border-radius:10px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);">
+        </label>
+        <button class="btn btn-gold" style="min-height:44px;" onclick="payOpen()">💳 Pay TEST ₦</button>
+      </div>
+      <div id="payBox" style="display:none; margin-top:.7rem; padding:.8rem; border-radius:10px; border:1px solid var(--border-subtle); background:rgba(255,255,255,.02);">
+        <div style="font-size:.85rem; font-weight:700;">TEST checkout — use card <span style="font-family:var(--font-mono);">4084 0840 8408 4081</span>, any future date + CVV</div>
+        <div style="display:flex; gap:.5rem; margin-top:.5rem; flex-wrap:wrap;">
+          <button class="btn btn-gold" style="min-height:44px;" onclick="payResult(true)">Pay now (TEST)</button>
+          <button class="btn btn-secondary" style="min-height:44px;" onclick="payResult(false)">Cancel</button>
+        </div>
+      </div>
+      <div id="payMsg" style="font-size:.85rem; margin-top:.5rem;"></div>
+      <div id="payHist" style="font-size:.8rem; color:var(--text-muted); margin-top:.4rem;"></div>
+    </section>
+
     <!-- Footer -->
     <footer>
       <p><strong>SACHIB Energy</strong> • Intelligent Church Energy Solution • <span id="appVersion">v0.1-pilot</span></p>
@@ -2091,6 +2113,40 @@
         if (sf) sf.value = String(state.reserveFloor || 15);
         const sv = document.getElementById('setPreserve');
         if (sv) sv.checked = !!state.preserve50;
+      } catch (err) {}
+    }
+
+    // ----- NEXT: TEST payment (demo only — no real money, no key needed) -----
+    // LIVE LATER: set PAYSTACK_PUBLIC_KEY='pk_test_xxx' and include
+    // https://js.paystack.co/v1/inline.js, then call PaystackPop.setup().
+    const PAYSTACK_PUBLIC_KEY = '';
+    function payOpen() {
+      document.getElementById('payBox').style.display = 'block';
+      const amt = parseFloat(document.getElementById('payAmount').value) || 1000;
+      document.getElementById('payMsg').innerHTML = 'Ready: <strong>₦' + amt.toLocaleString('en-NG') + ' TEST</strong> — no bank charge.';
+      renderPayHist();
+    }
+    function payResult(ok) {
+      const amt = parseFloat(document.getElementById('payAmount').value) || 1000;
+      const rec = { ts: new Date().toISOString(), amount: amt, status: ok ? 'SUCCESS (TEST)' : 'CANCELLED (TEST)' };
+      try {
+        const h = JSON.parse(localStorage.getItem('sachib_payments') || '[]');
+        h.unshift(rec);
+        localStorage.setItem('sachib_payments', JSON.stringify(h.slice(0, 20)));
+      } catch (err) {}
+      document.getElementById('payBox').style.display = 'none';
+      document.getElementById('payMsg').innerHTML = ok
+        ? '✅ <strong>TEST success:</strong> ₦' + amt.toLocaleString('en-NG') + ' recorded. No money moved.'
+        : '🟡 <strong>Cancelled.</strong> Nothing recorded as paid. Try again anytime.';
+      renderPayHist();
+      pushAlert(ok ? 'green' : 'yellow', ok ? ('TEST deposit recorded: ₦' + amt.toLocaleString('en-NG') + ' (no money moved).') : 'TEST payment cancelled by user.');
+    }
+    function renderPayHist() {
+      try {
+        const h = JSON.parse(localStorage.getItem('sachib_payments') || '[]');
+        document.getElementById('payHist').innerHTML = h.length
+          ? 'Past tests: ' + h.map(r => r.status + ' ₦' + r.amount.toLocaleString('en-NG')).join(' • ')
+          : 'No tests yet. Click Pay TEST to try.';
       } catch (err) {}
     }
 
