@@ -1333,6 +1333,19 @@
       <div style="font-size:.75rem; color:var(--text-dim);" id="forecastNote">P10 = low (only 10% worse). P50 = middle. P90 = high. Risk = chance power falls short that day.</div>
     </section>
 
+    <!-- NEXT: Alerts — simple watch list, free, on phone -->
+    <section class="panel" id="alertsPanel" style="margin-bottom: 2rem;" aria-live="polite">
+      <div class="section-eyebrow">Alerts</div>
+      <div class="section-heading" style="margin-bottom: 0.5rem;">Warnings <span id="alertCount" style="font-size:.85rem; color: var(--text-muted);">(0)</span></div>
+      <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.6rem;">
+        <button class="btn btn-secondary" style="min-height:44px;" onclick="testAlert()">🔔 Test alert</button>
+        <button class="btn btn-secondary" style="min-height:44px;" onclick="clearAlerts()">✓ Clear seen</button>
+      </div>
+      <div id="alertsList" style="display:flex; flex-direction:column; gap:.5rem;">
+        <div style="color: var(--text-muted); font-size:.88rem;">No warnings. System watching…</div>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer>
       <p><strong>SACHIB Energy</strong> • Intelligent Church Energy Solution • <span id="appVersion">v0.1-pilot</span></p>
@@ -1862,6 +1875,57 @@
       } catch (err) {}
     }
 
+    // ----- NEXT: simple alerts engine (free, local, no server) -----
+    state._alerts = [];
+    state._lastAlertKey = {};
+    function pushAlert(level, msg) {
+      const key = level + '|' + msg;
+      const now = Date.now();
+      // stop repeat spam: same warning once per 60s
+      if (state._lastAlertKey[key] && (now - state._lastAlertKey[key]) < 60000) return;
+      state._lastAlertKey[key] = now;
+      state._alerts.unshift({ ts: new Date().toLocaleTimeString('en-GB'), level, msg, seen: false });
+      if (state._alerts.length > 20) state._alerts.pop();
+      renderAlerts();
+    }
+    function renderAlerts() {
+      try {
+        const list = document.getElementById('alertsList');
+        const count = document.getElementById('alertCount');
+        const fresh = state._alerts.filter(a => !a.seen);
+        if (count) count.innerText = '(' + fresh.length + ')';
+        if (!state._alerts.length) {
+          list.innerHTML = '<div style="color: var(--text-muted); font-size:.88rem;">No warnings. System watching…</div>';
+          return;
+        }
+        list.innerHTML = state._alerts.map((a, i) => {
+          const c = a.level === 'red' ? '#F87171' : (a.level === 'yellow' ? 'var(--solar-gold)' : '#34D399');
+          return '<div style="padding:.6rem .8rem; border-radius:10px; border:1px solid var(--border-subtle); border-left:3px solid ' + c + '; background:rgba(255,255,255,.02); opacity:' + (a.seen ? '.6' : '1') + ';">'
+            + '<div style="font-size:.82rem;"><strong>' + a.ts + '</strong> — ' + a.msg + '</div>'
+            + (a.seen ? '' : ' <button style="margin-top:.3rem; font-size:.75rem; padding:.3rem .6rem; border-radius:8px; border:1px solid var(--border-subtle); background:transparent; color:var(--text-main); min-height:36px;" onclick="ackAlert(' + i + ')">Mark seen</button>')
+            + '</div>';
+        }).join('');
+      } catch (err) {}
+    }
+    function ackAlert(i) { try { state._alerts[i].seen = true; renderAlerts(); } catch (err) {} }
+    function clearAlerts() { try { state._alerts = state._alerts.filter(a => !a.seen); renderAlerts(); } catch (err) {} }
+    function testAlert() { pushAlert('yellow', 'Test: drum check — alerts work on this phone.'); }
+    // Auto rules run each calc: battery, heat, sun, load spike, generator
+    function autoAlerts(currentSolar, currentLoad, estHours) {
+      try {
+        if (state.batterySoC <= 20) pushAlert('red', 'Battery low at ' + Math.round(state.batterySoC) + '% — shed loads now.');
+        else if (state.batterySoC <= 40) pushAlert('yellow', 'Battery ' + Math.round(state.batterySoC) + '% — save power for night.');
+        if (state.batteryTemp >= 40) pushAlert('yellow', 'Battery hot at ' + Math.round(state.batteryTemp) + '°C — give air, reduce load.');
+        if (state.batterySoH < 90) pushAlert('yellow', 'Battery health ' + state.batterySoH.toFixed(1) + '% — plan replacement check.');
+        const hr = new Date().getHours();
+        if (hr >= 10 && hr <= 15 && currentSolar < 0.5) pushAlert('red', 'No sun at midday — check panels or sky.');
+        if (estHours > 0 && estHours < 3) pushAlert('red', 'Power runs out in ~' + estHours + 'h — act now.');
+        if (state.batterySoC < 15 && currentSolar < 1) pushAlert('red', 'Generator running — diesel burning.');
+        if (state._prevLoad !== undefined && (currentLoad - state._prevLoad) >= 2) pushAlert('yellow', 'Load jumped +' + (currentLoad - state._prevLoad).toFixed(1) + ' kW — new device on?');
+        state._prevLoad = currentLoad;
+      } catch (err) {}
+    }
+
     // ----- Initialize -----
     function init() {
       gateViews();
@@ -2263,6 +2327,8 @@
 
       // Phase 7 — smart advisor (needs currentSolar/currentLoad/netDeficit)
       try { updateSmartAdvisor(currentSolar, currentLoad, netDeficit); } catch (err) {}
+      // Alerts auto rules
+      try { autoAlerts(currentSolar, currentLoad, estHours); } catch (err) {}
 
       // 6. Update Prescriptive Advisory Banner based on AI heuristic
       updateAdvisory(currentSolar, currentLoad, estHours);
