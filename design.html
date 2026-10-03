@@ -303,6 +303,21 @@
     .link-prototype:hover {
       text-decoration: underline;
     }
+
+    /* Phase 1 docs: logo + tier + rules (simple, free, no images) */
+    .logo-row { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
+    .logo-box { width: 64px; height: 64px; border-radius: 16px; background: #0C1322; border: 1px solid rgba(245,158,11,.4); display: flex; align-items: center; justify-content: center; }
+    .tier-green { border-color: rgba(16,185,129,.4) !important; background: linear-gradient(135deg, rgba(16,185,129,.10), rgba(14,22,38,.95)) !important; }
+    .tier-green::before { background: #10B981 !important; }
+    .tier-red { border-color: rgba(239,68,68,.45) !important; background: linear-gradient(135deg, rgba(239,68,68,.10), rgba(14,22,38,.95)) !important; }
+    .tier-red::before { background: #EF4444 !important; }
+    .rule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: .75rem; }
+    @media (max-width: 700px) { .rule-grid { grid-template-columns: 1fr; } }
+    .do-box, .dont-box { padding: .8rem 1rem; border-radius: var(--radius-md); font-size: .88rem; }
+    .do-box { background: rgba(16,185,129,.10); border: 1px solid rgba(16,185,129,.35); }
+    .dont-box { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.35); }
+    .mini-card { background: var(--color-bg-surface-elevated); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); padding: 1rem; margin-top: 1rem; }
+    .mini-row { display: flex; justify-content: space-between; align-items: center; gap: .6rem; padding: .5rem 0; border-top: 1px solid var(--color-border-subtle); font-size: .9rem; }
   </style>
 </head>
 <body>
@@ -429,6 +444,80 @@
           <p style="font-size: 0.95rem; color: var(--color-text-secondary);">
             Sanctuary chillers are currently drawing 4.8 kW. Tomorrow’s weather forecast indicates 85% cloud coverage between 10:00 AM and 2:00 PM. We recommend enabling <em>Eco-Cooling Mode</em> tonight to preserve 12.4 kWh for tomorrow's Midweek Service.
           </p>
+        </div>
+        <div class="rule-grid">
+          <div class="do-box">✅ DO: one action per banner. Name the service + time. Example: “Shed A/C to protect Sunday 09:00.”</div>
+          <div class="dont-box">⛔ DON'T: 3 warnings at once. No small gray text on dark. Keep contrast 4.5:1 or better.</div>
+        </div>
+      </div>
+
+      <!-- Phase 1 missing docs: logo + 3 tiers + samples -->
+      <div class="component-box" style="grid-column: 1 / -1;">
+        <div class="type-label">Brand Logo — Dwelling Light</div>
+        <div class="logo-row">
+          <div class="logo-box" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="14" r="5.2" fill="#F59E0B"/>
+              <g stroke="#F59E0B" stroke-width="1.6" stroke-linecap="round">
+                <path d="M16 5.5v2M8.5 8.5l1.4 1.4M23.5 8.5l-1.4 1.4M6 14h2M24 14h2"/>
+              </g>
+              <path d="M8 20L16 13l8 7" stroke="#F8FAFC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M11 19.5V24h10v-4.5" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div style="font-size:.92rem; color: var(--color-text-secondary); max-width: 560px;">
+            Sun + roof + green base. Gold <span style="font-family:var(--font-mono)">#F59E0B</span> for sun.
+            Emerald <span style="font-family:var(--font-mono)">#10B981</span> for dwelling base.
+            Use on navy only. Small size? Use mono white version. Files: <span style="font-family:var(--font-mono)">assets/logo.svg</span>, <span style="font-family:var(--font-mono)">assets/favicon.svg</span>.
+          </div>
+        </div>
+        <div class="rule-grid">
+          <div class="do-box">✅ DO: 16px favicon → 64px header stays sharp. Clear space = half logo width.</div>
+          <div class="dont-box">⛔ DON'T: no photo behind logo. No recolor to blue/red. No stretch.</div>
+        </div>
+      </div>
+
+      <div class="component-box" style="grid-column: 1 / -1;">
+        <div class="type-label">Advisory 3 Tiers — Green / Yellow / Red</div>
+        <div class="advisory-preview tier-green">
+          <strong style="color:#34D399; display:block; margin-bottom:.3rem;">🟢 STABLE — Normal Solar Operation</strong>
+          <p style="font-size:.92rem; color: var(--color-text-secondary);">Sun covers load. Tip: run heavy cooling 11:00–14:00 on direct sun.</p>
+        </div>
+        <div class="advisory-preview" style="margin-top:.75rem;">
+          <strong style="color:var(--color-solar-gold); display:block; margin-bottom:.3rem;">🟡 CAUTION — Evening Deficit Risk</strong>
+          <p style="font-size:.92rem; color: var(--color-text-secondary);">Buffer under 2h vs next service. Action: shed A/C 3.10 kW or prioritize charging.</p>
+        </div>
+        <div class="advisory-preview tier-red" style="margin-top:.75rem;">
+          <strong style="color:#F87171; display:block; margin-bottom:.3rem;">🔴 CRITICAL — Depletes Before Service</strong>
+          <p style="font-size:.92rem; color: var(--color-text-secondary);">Buffer below 0h. Action now: eco-shed + vigil mode, or generator will start.</p>
+        </div>
+      </div>
+
+      <div class="component-box">
+        <div class="type-label">Power Node Card + Mode Card</div>
+        <div class="mini-card">
+          <div style="font-family:var(--font-heading); font-weight:700;">☀️ Solar — 8.42 kW</div>
+          <div style="font-size:.85rem; color:var(--color-text-secondary);">Irradiance 890 W/m² • PV 42.5V • 97% eff</div>
+        </div>
+        <div class="mini-card">
+          <div style="font-family:var(--font-heading); font-weight:700;">🌙 Night Vigil</div>
+          <div style="font-size:.85rem; color:var(--color-text-secondary);">Battery saving • A/C off • Mic + lights on</div>
+        </div>
+        <div class="rule-grid">
+          <div class="do-box">✅ DO: big number in mono font. One status word: Charging / Active / Standby.</div>
+          <div class="dont-box">⛔ DON'T: no 4-decimal numbers. No emoji as the only label.</div>
+        </div>
+      </div>
+
+      <div class="component-box">
+        <div class="type-label">Circuit Row + Slider + Savings</div>
+        <div class="mini-row"><span>🔒 Vaccine fridge — always ON</span><span style="font-family:var(--font-mono); color:var(--color-solar-gold);">0.80 kW</span></div>
+        <div class="mini-row"><span>Sanctuary A/C — can shed</span><span style="font-family:var(--font-mono); color:var(--color-solar-gold);">3.10 kW</span></div>
+        <div class="mini-row"><span>Sun slider 0–100% • Battery 5–100%</span><span style="font-family:var(--font-mono);">LIVE</span></div>
+        <div class="mini-row"><span>₦ saved = litres × price • packs = ₦ ÷ 4500</span><span style="font-family:var(--font-mono); color:#34D399;">₦0</span></div>
+        <div class="rule-grid">
+          <div class="do-box">✅ DO: lock sign for essential. Sliders min height 44px. Money in mono.</div>
+          <div class="dont-box">⛔ DON'T: never let essential turn off. No fake sample numbers in docs.</div>
         </div>
       </div>
     </div>
