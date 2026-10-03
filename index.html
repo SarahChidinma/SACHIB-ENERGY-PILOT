@@ -1355,6 +1355,14 @@
       <button class="btn btn-secondary" style="margin-top:.5rem; min-height:44px;" onclick="resetAnalytics()">↺ Reset today</button>
     </section>
 
+    <!-- NEXT: Remote — switch sites from phone, free, local -->
+    <section class="panel" id="remotePanel" style="margin-bottom: 2rem;">
+      <div class="section-eyebrow">Remote</div>
+      <div class="section-heading" style="margin-bottom: 0.5rem;">My sites — tap to open</div>
+      <div id="remoteGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem;"></div>
+      <div style="font-size:.78rem; color:var(--text-dim); margin-top:.5rem;">Mock multi-site. Each site keeps its own battery %. Real cloud sync later (still free).</div>
+    </section>
+
     <!-- Footer -->
     <footer>
       <p><strong>SACHIB Energy</strong> • Intelligent Church Energy Solution • <span id="appVersion">v0.1-pilot</span></p>
@@ -1968,6 +1976,60 @@
       recalculateEnergy();
     }
 
+    // ----- NEXT: remote multi-site (free, this phone only) -----
+    state._sites = {
+      cathedral: { label: 'Grace Cathedral', soc: 78, load: 7.2 },
+      clinic: { label: 'St Luke Clinic', soc: 64, load: 4.6 },
+      academy: { label: 'Faith Academy', soc: 82, load: 5.1 },
+      member_biz: { label: 'Bakery & Cold Store', soc: 55, load: 5.3 }
+    };
+    function currentSiteKey() {
+      const el = document.getElementById('facilitySelect');
+      return (el && el.value) || 'cathedral';
+    }
+    function switchSite(key) {
+      try {
+        // save current battery into old site
+        const old = currentSiteKey();
+        if (state._sites[old]) { state._sites[old].soc = Math.round(state.batterySoC); }
+        document.getElementById('facilitySelect').value = key;
+        localStorage.setItem('sachib_facility', key);
+        // load new site battery
+        if (state._sites[key]) {
+          state.batterySoC = state._sites[key].soc;
+          const sl = document.getElementById('socSlider');
+          if (sl) { sl.value = state.batterySoC; document.getElementById('socSliderVal').innerText = state.batterySoC + '%'; }
+        }
+        applyRole();
+        renderRemote();
+      } catch (err) {}
+    }
+    function renderRemote() {
+      try {
+        const active = currentSiteKey();
+        const grid = document.getElementById('remoteGrid');
+        if (!grid) return;
+        grid.innerHTML = Object.keys(state._sites).map(k => {
+          const s = state._sites[k];
+          // keep active card live
+          const soc = (k === active) ? Math.round(state.batterySoC) : s.soc;
+          const isA = (k === active);
+          return '<div style="padding:.7rem; border-radius:10px; border:1px solid ' + (isA ? 'var(--solar-gold)' : 'var(--border-subtle)') + '; background:' + (isA ? 'rgba(245,158,11,.08)' : 'rgba(255,255,255,.02)') + ';">'
+            + '<div style="font-size:.82rem; font-weight:700;">' + (isA ? '📍 ' : '') + s.label + '</div>'
+            + '<div style="font-family:var(--font-mono); font-size:.8rem; color:var(--text-muted);">🔋 ' + soc + '%</div>'
+            + (isA ? '<div style="font-size:.75rem; color:var(--solar-gold);">Open now</div>'
+                   : '<button style="margin-top:.4rem; font-size:.78rem; padding:.4rem .7rem; border-radius:8px; border:1px solid var(--border-subtle); background:transparent; color:var(--text-main); min-height:44px; width:100%;" onclick="switchSite(\'' + k + '\')">Open →</button>')
+            + '</div>';
+        }).join('');
+        // remember active load for cards
+        if (state._sites[active]) {
+          let _ld = 0;
+          for (const key in state.circuits) { if (state.circuits[key].active) _ld += state.circuits[key].load; }
+          state._sites[active].load = +_ld.toFixed(2);
+        }
+      } catch (err) {}
+    }
+
     // ----- Initialize -----
     function init() {
       gateViews();
@@ -2373,6 +2435,8 @@
       try { autoAlerts(currentSolar, currentLoad, estHours); } catch (err) {}
       // Analytics live stats
       try { updateAnalytics(currentSolar, currentLoad); } catch (err) {}
+      // Remote cards stay fresh (cheap: every calc is fine)
+      try { renderRemote(); } catch (err) {}
 
       // 6. Update Prescriptive Advisory Banner based on AI heuristic
       updateAdvisory(currentSolar, currentLoad, estHours);
