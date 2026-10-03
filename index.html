@@ -868,6 +868,63 @@
   <div class="ambient-glow-left"></div>
 
   <div class="layout-wrapper">
+    <!-- NEXT: simple login (free, saved on this phone only) -->
+    <section class="panel" id="viewAuth" style="display:none; max-width: 520px; margin: 2rem auto;">
+      <div class="section-eyebrow">Welcome</div>
+      <div class="section-heading">Sign in to SACHIB Energy</div>
+      <p style="color: var(--text-muted); font-size: .88rem;">No internet needed. Saved on this phone only. Free.</p>
+      <label style="display:block; font-size:.85rem; margin:.6rem 0;">Your name<br>
+        <input id="authName" type="text" placeholder="e.g. Sarah" style="width:100%; padding:.6rem; border-radius:10px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);">
+      </label>
+      <label style="display:block; font-size:.85rem; margin:.6rem 0;">Role<br>
+        <select id="authRole" class="select-mode" style="width:100%;">
+          <option value="admin">Admin — manages site</option>
+          <option value="designer">Designer — Admin type for setup</option>
+          <option value="member">Member — uses energy</option>
+        </select>
+      </label>
+      <button class="btn btn-gold" style="width:100%; margin-top:.6rem; min-height:44px;" onclick="authContinue()">Continue →</button>
+      <div style="font-size:.75rem; color:var(--text-dim); margin-top:.5rem;">Real cloud login (Supabase, still free) comes later. This keeps pilot free.</div>
+    </section>
+
+    <!-- NEXT: setup — device + site sizes feed the whole app -->
+    <section class="panel" id="viewOnboard" style="display:none; max-width: 640px; margin: 2rem auto;">
+      <div class="section-eyebrow">Step 1 of 1 — Your site</div>
+      <div class="section-heading">Device + size setup</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:.6rem;">
+        <label style="font-size:.82rem;">Site<br>
+          <select id="obSite" class="select-mode" style="width:100%;">
+            <option value="cathedral">Grace Cathedral</option>
+            <option value="clinic">St Luke Clinic</option>
+            <option value="academy">Faith Academy</option>
+            <option value="member_biz">Member business / Home</option>
+          </select>
+        </label>
+        <label style="font-size:.82rem;">Place<br>
+          <select id="obPlace" class="select-mode" style="width:100%;">
+            <option value="lagos">Lagos, Nigeria</option>
+            <option value="abuja">Abuja, Nigeria</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+        <label style="font-size:.82rem;">Inverter size (kVA)<br>
+          <input id="obInv" type="number" value="5" min="1" max="100" style="width:100%; padding:.55rem; border-radius:10px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);">
+        </label>
+        <label style="font-size:.82rem;">Solar size (kWp)<br>
+          <input id="obSolar" type="number" value="8.4" step="0.1" min="0.5" max="200" style="width:100%; padding:.55rem; border-radius:10px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);">
+        </label>
+        <label style="font-size:.82rem;">Battery bank (kWh)<br>
+          <input id="obBatt" type="number" value="28.8" step="0.1" min="1" max="500" style="width:100%; padding:.55rem; border-radius:10px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);">
+        </label>
+        <label style="font-size:.82rem;">Daily need (kWh)<br>
+          <input id="obNeed" type="number" value="32" min="1" max="1000" style="width:100%; padding:.55rem; border-radius:10px; border:1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-main);">
+        </label>
+      </div>
+      <button class="btn btn-gold" style="width:100%; margin-top:.8rem; min-height:44px;" onclick="onboardFinish()">Open my dashboard →</button>
+      <button class="btn btn-secondary" style="width:100%; margin-top:.4rem;" onclick="authBack()">← Back</button>
+    </section>
+
+    <div id="viewApp" style="display:none;">
     <!-- Top Navigation Header -->
     <header>
       <div class="brand-group">
@@ -916,6 +973,9 @@
         <a href="design.html" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.8rem;">
           🎨 Design Tokens
         </a>
+        <button class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.8rem;" onclick="authSignOut()" title="Sign out on this phone">
+          ⎋ Sign out
+        </button>
       </div>
     </header>
 
@@ -1269,6 +1329,7 @@
         <a href="design.html">Design Tokens</a> • <a href="PRD.md">PRD Specification</a>
       </p>
     </footer>
+    </div><!-- /viewApp -->
   </div>
 
   <script>
@@ -1625,8 +1686,72 @@
       return "Evening — No Solar Generation";
     }
 
+    // ----- NEXT: login + setup flow (free, this phone only) -----
+    function gateViews() {
+      const user = localStorage.getItem('sachib_user');
+      const setup = localStorage.getItem('sachib_setup');
+      const vA = document.getElementById('viewAuth');
+      const vO = document.getElementById('viewOnboard');
+      const vP = document.getElementById('viewApp');
+      if (!user) { vA.style.display = 'block'; vO.style.display = 'none'; vP.style.display = 'none'; return; }
+      if (!setup) { vA.style.display = 'none'; vO.style.display = 'block'; vP.style.display = 'none'; return; }
+      vA.style.display = 'none'; vO.style.display = 'none'; vP.style.display = 'block';
+    }
+    function authContinue() {
+      const name = (document.getElementById('authName').value || 'User').trim();
+      const role = document.getElementById('authRole').value || 'admin';
+      localStorage.setItem('sachib_user', JSON.stringify({ name, role }));
+      localStorage.setItem('sachib_role', role);
+      // prefill setup from saved or defaults
+      try {
+        const s = JSON.parse(localStorage.getItem('sachib_setup') || 'null');
+        if (s) {
+          document.getElementById('obSite').value = s.site;
+          document.getElementById('obSolar').value = s.solarKwp;
+          document.getElementById('obBatt').value = s.battKwh;
+        }
+      } catch (err) {}
+      gateViews();
+    }
+    function authBack() {
+      localStorage.removeItem('sachib_user');
+      gateViews();
+    }
+    function authSignOut() {
+      // keep setup sizes, just sign out; hold Back to fully reset in pilot
+      localStorage.removeItem('sachib_user');
+      gateViews();
+    }
+    function onboardFinish() {
+      const site = document.getElementById('obSite').value;
+      const place = document.getElementById('obPlace').value;
+      const solarKwp = parseFloat(document.getElementById('obSolar').value) || 8.4;
+      const battKwh = parseFloat(document.getElementById('obBatt').value) || 28.8;
+      const need = parseFloat(document.getElementById('obNeed').value) || 32;
+      const inv = parseFloat(document.getElementById('obInv').value) || 5;
+      localStorage.setItem('sachib_setup', JSON.stringify({ site, place, solarKwp, battKwh, need, inv }));
+      localStorage.setItem('sachib_facility', site);
+      document.getElementById('facilitySelect').value = site;
+      // feed real sizes into the live engine
+      state.solarMaxKw = solarKwp;
+      state.batteryCapacityKwh = battKwh;
+      gateViews();
+      applyRole();
+    }
+
     // ----- Initialize -----
     function init() {
+      gateViews();
+      // returning user: apply saved sizes before first calc
+      try {
+        const s = JSON.parse(localStorage.getItem('sachib_setup') || 'null');
+        if (s) {
+          state.solarMaxKw = s.solarKwp || state.solarMaxKw;
+          state.batteryCapacityKwh = s.battKwh || state.batteryCapacityKwh;
+        }
+        const u = JSON.parse(localStorage.getItem('sachib_user') || 'null');
+        if (u && u.role) localStorage.setItem('sachib_role', u.role);
+      } catch (err) {}
       const savedFacility = localStorage.getItem('sachib_facility');
       if (savedFacility) {
         document.getElementById('facilitySelect').value = savedFacility;
