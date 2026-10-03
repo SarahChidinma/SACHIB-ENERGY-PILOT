@@ -1346,6 +1346,15 @@
       </div>
     </section>
 
+    <!-- NEXT: Analytics — simple session stats, free, on phone -->
+    <section class="panel" id="analyticsPanel" style="margin-bottom: 2rem;">
+      <div class="section-eyebrow">Analytics</div>
+      <div class="section-heading" style="margin-bottom: 0.5rem;">Today on this phone</div>
+      <div id="analyticsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.6rem;"></div>
+      <div style="font-size:.78rem; color:var(--text-dim); margin-top:.5rem;" id="analyticsNote">Live session only. Clears on refresh. Cloud history comes later (still free).</div>
+      <button class="btn btn-secondary" style="margin-top:.5rem; min-height:44px;" onclick="resetAnalytics()">↺ Reset today</button>
+    </section>
+
     <!-- Footer -->
     <footer>
       <p><strong>SACHIB Energy</strong> • Intelligent Church Energy Solution • <span id="appVersion">v0.1-pilot</span></p>
@@ -1926,6 +1935,39 @@
       } catch (err) {}
     }
 
+    // ----- NEXT: simple analytics (free, session only) -----
+    state._analytics = { maxSolar: 0, maxLoad: 0, sumLoad: 0, n: 0, minSoC: 100, maxSoC: 0 };
+    function updateAnalytics(currentSolar, currentLoad) {
+      try {
+        const a = state._analytics;
+        a.maxSolar = Math.max(a.maxSolar, currentSolar);
+        a.maxLoad = Math.max(a.maxLoad, currentLoad);
+        a.sumLoad += currentLoad; a.n++;
+        a.minSoC = Math.min(a.minSoC, state.batterySoC);
+        a.maxSoC = Math.max(a.maxSoC, state.batterySoC);
+        const avg = a.n ? (a.sumLoad / a.n) : 0;
+        const cards = [
+          ['☀️ Solar made', state.solarKwhToday.toFixed(2) + ' kWh'],
+          ['🔌 Avg load', avg.toFixed(2) + ' kW'],
+          ['⚡ Peak sun', a.maxSolar.toFixed(2) + ' kW'],
+          ['📈 Peak load', a.maxLoad.toFixed(2) + ' kW'],
+          ['🔋 Battery low–high', Math.round(a.minSoC) + '%–' + Math.round(a.maxSoC) + '%'],
+          ['💧 Diesel saved', (state.solarKwhToday / 3.2).toFixed(2) + ' L']
+        ];
+        document.getElementById('analyticsGrid').innerHTML = cards.map(c =>
+          '<div style="padding:.7rem; border-radius:10px; border:1px solid var(--border-subtle); background:rgba(255,255,255,.02);">'
+          + '<div style="font-size:.78rem; color:var(--text-muted);">' + c[0] + '</div>'
+          + '<div style="font-family:var(--font-mono); font-weight:700;">' + c[1] + '</div></div>'
+        ).join('');
+      } catch (err) {}
+    }
+    function resetAnalytics() {
+      state._analytics = { maxSolar: 0, maxLoad: 0, sumLoad: 0, n: 0, minSoC: 100, maxSoC: 0 };
+      state.solarKwhToday = 0; state.genHoursAvoidedNum = 0;
+      state.histSolar = []; state.histLoad = [];
+      recalculateEnergy();
+    }
+
     // ----- Initialize -----
     function init() {
       gateViews();
@@ -2329,6 +2371,8 @@
       try { updateSmartAdvisor(currentSolar, currentLoad, netDeficit); } catch (err) {}
       // Alerts auto rules
       try { autoAlerts(currentSolar, currentLoad, estHours); } catch (err) {}
+      // Analytics live stats
+      try { updateAnalytics(currentSolar, currentLoad); } catch (err) {}
 
       // 6. Update Prescriptive Advisory Banner based on AI heuristic
       updateAdvisory(currentSolar, currentLoad, estHours);
