@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SACHIB Energy — New Look (Sections 9–26)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Flex:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#173B5F; --teal:#1D8A7A; --amber:#F4B740; --green:#16A34A;
+  --warn:#EA8600; --red:#DC2626; --grey:#64748B;
+  --bg:#F4F6F9; --surface:#FFFFFF; --surface2:#EDF1F6;
+  --text:#0F1F2E; --text2:#4B6478;
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.topbar{background:var(--blue);color:#fff;padding:.9rem 1.1rem;display:flex;align-items:center;gap:.7rem;position:sticky;top:0;z-index:20}
+.topbar .mark{width:36px;height:36px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center}
+.topbar b{font-size:1.02rem;letter-spacing:.01em}
+.topbar small{display:block;font-weight:400;opacity:.75;font-size:.72rem}
+.wrap{max-width:760px;margin:0 auto;padding:1rem 1rem 6rem}
+.hero{background:var(--surface);border-radius:var(--radius);padding:1.2rem;box-shadow:0 1px 3px rgba(23,59,95,.12)}
+.hero .msg{font-size:.8rem;color:var(--text2);text-transform:uppercase;letter-spacing:.08em}
+.hero .big{font-family:'Roboto Flex',Roboto,sans-serif;font-size:2rem;font-weight:700;margin:.2rem 0}
+.battbar{height:12px;border-radius:999px;background:var(--surface2);overflow:hidden;margin:.6rem 0}
+.battbar>div{height:100%;border-radius:999px;background:var(--teal);transition:width .5s}
+.meta{font-size:.88rem;color:var(--text2)}
+.flow{background:var(--surface);border-radius:var(--radius);padding:1rem;margin-top:.9rem;box-shadow:0 1px 3px rgba(23,59,95,.10)}
+.frow{display:flex;align-items:center;gap:.6rem;padding:.45rem 0;font-size:.92rem}
+.fdot{width:12px;height:12px;border-radius:50%}
+.ai{background:var(--blue);color:#fff;border-radius:var(--radius);padding:1rem;margin-top:.9rem}
+.ai .tag{font-size:.72rem;letter-spacing:.1em;opacity:.8;text-transform:uppercase}
+.ai p{margin:.35rem 0 .7rem;font-size:.95rem}
+.btn{display:inline-flex;align-items:center;gap:.4rem;border:none;cursor:pointer;border-radius:999px;padding:.65rem 1.2rem;font-weight:700;min-height:44px;font-size:.92rem}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-amber{background:var(--amber);color:#231A03}
+.btn-ghost{background:#fff;color:var(--blue);border:1px solid #CBD8E4}
+.card{background:var(--surface);border-radius:var(--radius);padding:1rem;margin-top:.9rem;box-shadow:0 1px 3px rgba(23,59,95,.10)}
+.card h3{font-size:1rem;margin-bottom:.3rem}
+.kv{display:flex;justify-content:space-between;padding:.4rem 0;border-top:1px solid var(--surface2);font-size:.9rem}
+.kv b{font-variant-numeric:tabular-nums}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #DCE5EE;display:flex;z-index:20}
+.tabs button{flex:1;border:none;background:none;padding:.7rem .2rem 1rem;font-size:.72rem;color:var(--text2);min-height:56px;cursor:pointer}
+.tabs button.on{color:var(--blue);font-weight:700}
+.view{display:none}.view.on{display:block}
+.chip{display:inline-block;padding:.25rem .7rem;border-radius:999px;font-size:.75rem;font-weight:500}
+.note{font-size:.8rem;color:var(--text2)}
+input,select{font:inherit;padding:.6rem;border-radius:10px;border:1px solid #CBD8E4;background:#fff;color:var(--text);min-height:44px}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="mark" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="13" r="5" fill="#F4B740"/><path d="M8 20L16 13l8 7" stroke="#173B5F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 19.5V24h10v-4.5" stroke="#1D8A7A" stroke-width="2.4" stroke-linecap="round"/></svg>
+  </div>
+  <div><b>SACHIB Energy</b><small>New look • sections 9–26 • Material 3 + energy layer</small></div>
+</div>
+
+<div class="wrap">
+  <!-- HOME: one message -->
+  <div class="view on" id="v-home">
+    <div class="hero">
+      <div class="msg">Home — your energy is <span id="hState">healthy</span></div>
+      <div class="big"><span id="hSoc">68</span>% <span style="font-size:1rem;font-weight:400;color:var(--text2)" id="hLabel">Healthy</span></div>
+      <div class="battbar"><div id="hBar" style="width:68%"></div></div>
+      <div class="meta"><span id="hRuntime">7h 42m remaining</span> • Based on current use</div>
+      <div style="margin-top:.7rem;display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn btn-blue" onclick="go('forecast')">View forecast</button>
+        <button class="btn btn-ghost" onclick="go('insights')">Review recommendation</button>
+      </div>
+    </div>
+    <div class="flow">
+      <div class="frow"><span class="fdot" style="background:var(--amber)"></span>☀ Solar Generation <b id="fSolar">3.8 kW</b></div>
+      <div style="text-align:center;color:var(--grey)">↓</div>
+      <div class="frow"><span class="fdot" style="background:var(--teal)"></span>🔋 Battery <b id="fBatt">68% • Charging</b></div>
+      <div style="text-align:center;color:var(--grey)">↓</div>
+      <div class="frow"><span class="fdot" style="background:var(--blue)"></span>🏠 Home <b id="fLoad">2.4 kW</b> use</div>
+      <div class="note" style="margin-top:.4rem">Weather is secondary: <span id="fWx">28°C • Partly cloudy • rain 35% → expected solar 20.1 kWh</span></div>
+    </div>
+    <div class="ai">
+      <div class="tag">AI insight</div>
+      <p id="aiHome">Your use is 18% higher than normal.</p>
+      <button class="btn btn-amber" onclick="go('insights')">See recommendation</button>
+    </div>
+  </div>
+
+  <!-- ENERGY -->
+  <div class="view" id="v-energy">
+    <div class="card"><h3>Energy — where it comes from, where it goes</h3>
+      <div class="kv"><span>Solar → Battery (amber)</span><b id="eSB">2.1 kW</b></div>
+      <div class="kv"><span>Battery → Home (teal)</span><b id="eBH">1.2 kW</b></div>
+      <div class="kv"><span>Grid → Home (blue)</span><b>0.0 kW</b></div>
+      <div class="kv"><span>Saved today (green)</span><b id="eSaved" style="color:var(--green)">4.7 kWh</b></div>
+    </div>
+  </div>
+
+  <!-- DEVICES -->
+  <div class="view" id="v-dev">
+    <div class="card"><h3>Appliances — what uses your energy</h3><div id="devList"></div></div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="view" id="v-ins">
+    <div class="ai"><div class="tag">AI recommendation</div>
+      <p id="aiRec">Turning off the Living Room AC could extend battery by ~1h 45m.</p>
+      <button class="btn btn-amber" onclick="aiAct()">Turn off AC</button>
+    </div>
+    <div class="card"><h3>Savings — green means the system won</h3>
+      <div class="kv"><span>This month</span><b>42.8 kWh saved</b></div>
+      <div class="kv"><span>Cost avoided</span><b style="color:var(--green)">₦8,460</b></div>
+      <div class="kv"><span>Use down</span><b>12%</b></div>
+    </div>
+  </div>
+
+  <!-- FORECAST -->
+  <div class="view" id="v-fore">
+    <div class="card"><h3>Forecast — what happens next</h3>
+      <p class="note">Battery may reach <b>22% by 11:30 PM</b> at current use.</p>
+      <button class="btn btn-blue" onclick="alert('Full 7-day engine lives in main app Forecast box. This new look reuses it next.')">Run 7-day check</button>
+    </div>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Main">
+  <button class="on" id="t-home" onclick="go('home')">🏠<br>Home</button>
+  <button id="t-energy" onclick="go('energy')">⚡<br>Energy</button>
+  <button id="t-dev" onclick="go('dev')">🔌<br>Devices</button>
+  <button id="t-ins" onclick="go('ins')">🧠<br>Insights</button>
+  <button id="t-fore" onclick="go('forecast')">📈<br>Forecast</button>
+</nav>
+
+<script>
+const S={soc:68,load:2.4,solar:3.8,ac:true};
+const DEV=[["Living Room AC",1.55],["Fridge",0.15],["TV + Sound",0.25],["Lights (10)",0.10],["Pump",0.75]];
+function battState(s){if(s>=70)return["Healthy","var(--teal)"];if(s>=40)return["Normal","var(--blue)"];if(s>=25)return["Attention","var(--amber)"];return["Protection","var(--red)"]}
+function tick(){
+  S.solar=Math.max(0,3.8+Math.sin(Date.now()/9000)*1.2+(Math.random()-.5)*.3);
+  S.load=Math.max(.4,(S.ac?2.4:1.1)+(Math.random()-.5)*.2);
+  S.soc=Math.min(100,Math.max(5,S.soc+((S.solar-S.load)*2/3600)/28.8*100));
+  const[l,c]=battState(S.soc);
+  document.getElementById("hSoc").innerText=Math.round(S.soc);
+  document.getElementById("hLabel").innerText=l;
+  document.getElementById("hState").innerText=l.toLowerCase();
+  const bar=document.getElementById("hBar");bar.style.width=S.soc+"%";bar.style.background=c;
+  const hrs=S.load>S.solar?(((S.soc-15)/100*28.8)/Math.max(.1,S.load-S.solar)):99;
+  document.getElementById("hRuntime").innerText=hrs>48?"48h+ buffer":hrs.toFixed(1)+"h remaining";
+  document.getElementById("fSolar").innerText=S.solar.toFixed(1)+" kW";
+  document.getElementById("fBatt").innerText=Math.round(S.soc)+"% • "+(S.solar>S.load?"Charging":"Discharging");
+  document.getElementById("fLoad").innerText=S.load.toFixed(1)+" kW";
+  document.getElementById("eSB").innerText=Math.max(0,S.solar-S.load).toFixed(1)+" kW";
+  document.getElementById("eBH").innerText=Math.max(0,S.load-Math.max(0,S.solar-S.load)).toFixed(1)+" kW";
+  document.getElementById("aiHome").innerText=S.load>2.6?"Your use is 18% higher than normal.":"Use looks normal right now.";
+  document.getElementById("devList").innerHTML=DEV.map(d=>'<div class="kv"><span>'+d[0]+'</span><b>'+d[1].toFixed(2)+' kW</b></div>').join("");
+}
+function go(v){
+  const m={home:"v-home",energy:"v-energy",dev:"v-dev",ins:"v-ins",forecast:"v-fore"};
+  Object.values(m).forEach(id=>document.getElementById(id).classList.remove("on"));
+  document.getElementById(m[v]).classList.add("on");
+  ["home","energy","dev","ins","fore"].forEach(t=>document.getElementById("t-"+t).classList.remove("on"));
+  const tb={home:"t-home",energy:"t-energy",dev:"t-dev",ins:"t-ins",forecast:"t-fore"}[v];
+  if(tb)document.getElementById(tb).classList.add("on");
+  window.scrollTo(0,0);
+}
+function aiAct(){S.ac=false;document.getElementById("aiRec").innerText="Living Room AC was turned OFF automatically. Battery will last longer.";tick();}
+setInterval(tick,2000);tick();
+</script>
+</body>
+</html>
